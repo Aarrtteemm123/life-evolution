@@ -96,6 +96,22 @@ class SubstanceGrid:
                 return sub.concentration
         return 0.0
 
+    def to_dict(self):
+        all_subs = []
+        for (x, y), subs in self.grid.items():
+            for s in subs:
+                d = s.to_dict()
+                d["x"], d["y"] = x, y
+                all_subs.append(d)
+        return {"width": self.width, "height": self.height, "substances": all_subs}
+
+    @classmethod
+    def from_dict(cls, data):
+        grid = cls(data["width"], data["height"])
+        for sub in data["substances"]:
+            grid.add_substance(sub["x"], sub["y"], Substance.from_dict(sub))
+        return grid
+
     def __repr__(self):
         active_cells = len(self.grid)
         total_subs = sum(len(v) for v in self.grid.values())

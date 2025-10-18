@@ -36,6 +36,25 @@ class Substance:
             volatility=self.volatility
         )
 
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "type": self.type,
+            "concentration": self.concentration,
+            "energy": self.energy,
+            "volatility": self.volatility,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            name=data["name"],
+            type_=data["type"],
+            concentration=data["concentration"],
+            energy=data["energy"],
+            volatility=data["volatility"]
+        )
+
     def __repr__(self):
         return (f"Substance(name={self.name}, type={self.type}, "
                 f"conc={self.concentration:.3f}, energy={self.energy:.2f}, "

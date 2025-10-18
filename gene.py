@@ -70,6 +70,27 @@ class Gene:
             active=self.active
         )
 
+    def to_dict(self):
+        return {
+            "receptor": self.receptor,
+            "trigger": self.trigger.to_dict(),
+            "action": self.action.to_dict(),
+            "efficiency": self.efficiency,
+            "active": self.active
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        from trigger import Trigger
+        from action import Action
+        return cls(
+            receptor=data["receptor"],
+            trigger=Trigger.from_dict(data["trigger"]),
+            action=Action.from_dict(data["action"]),
+            efficiency=data.get("efficiency", 1.0),
+            active=data.get("active", True)
+        )
+
     def __repr__(self):
         return (f"Gene(receptor={self.receptor}, {self.trigger}, "
                 f"{self.action}, eff={self.efficiency:.2f}, active={self.active})")

@@ -63,3 +63,21 @@ class Action:
         if self.direction != (0, 0):
             info.append(f"dir={self.direction}")
         return f"Action({', '.join(info)})"
+
+    def to_dict(self):
+        return {
+            "type": self.type,
+            "power": self.power,
+            "substance_name": self.substance_name,
+            "direction": self.direction,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            type_=data["type"],
+            power=data.get("power", 1.0),
+            substance_name=data.get("substance_name"),
+            direction=tuple(data.get("direction", (0, 0)))
+        )
+

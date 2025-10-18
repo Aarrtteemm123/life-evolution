@@ -118,6 +118,29 @@ class Cell:
         from copy import deepcopy
         return deepcopy(self)
 
+    def to_dict(self):
+        return {
+            "position": self.position,
+            "energy": self.energy,
+            "health": self.health,
+            "age": self.age,
+            "genes": [g.to_dict() for g in self.genes],
+            "substances": [s.to_dict() for s in self.substances.values()]
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        cell = cls(position=tuple(data["position"]))
+        cell.energy = data["energy"]
+        cell.health = data["health"]
+        cell.age = data["age"]
+
+        from gene import Gene
+        from substance import Substance
+        cell.genes = [Gene.from_dict(g) for g in data.get("genes", [])]
+        cell.substances = {s["name"]: Substance.from_dict(s) for s in data.get("substances", [])}
+        return cell
+
     def __repr__(self):
         return (
             f"Cell(pos={self.position}, E={self.energy:.2f}, H={self.health:.2f}, "

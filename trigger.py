@@ -16,6 +16,13 @@ class Trigger:
             return abs(value - self.threshold) < 1e-6
         return False
 
+    def to_dict(self):
+        return {"threshold": self.threshold, "mode": self.mode}
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(threshold=data["threshold"], mode=data["mode"])
+
     def __repr__(self):
         return f"Trigger(threshold={self.threshold}, mode={self.mode})"
 
