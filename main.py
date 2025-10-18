@@ -77,6 +77,8 @@ def populate_world(world: World):
         world.cells.append(cell)
 
 
+import time
+
 def run_simulation():
     """Основной цикл симуляции."""
     print("🔬 Инициализация мира...")
@@ -85,10 +87,32 @@ def run_simulation():
 
     print(f"🌎 Мир создан: {len(world.cells)} клеток, {len(world.grid.grid)} активных ячеек веществ")
 
+    print("🚀 Запуск симуляции...")
+    start_time = time.perf_counter()
+
+    last_time = start_time
     for step in range(SIMULATION_STEPS):
+        step_start = time.perf_counter()
+
         world.update()
-        if step % 10 == 0:
-            print(f"Step {step}: cells={len(world.cells)}, tick={world.tick}")
+
+        step_end = time.perf_counter()
+        step_duration = step_end - step_start
+
+        if step % 10 == 0 and step > 0:
+            now = time.perf_counter()
+            elapsed = now - last_time
+            ticks_per_sec = 10 / elapsed
+            avg_step_time = elapsed / 10
+            print(f"Step {step:4d} | tick={world.tick:4d} | "
+                  f"cells={len(world.cells):3d} | "
+                  f"{ticks_per_sec:.2f} tps | {avg_step_time*1000:.2f} ms/tick")
+            last_time = now
+
+    total_time = time.perf_counter() - start_time
+    avg_tick_time = total_time / SIMULATION_STEPS
+    print("⏱️ Всего времени:", f"{total_time:.2f}s")
+    print("⚡ Средняя скорость:", f"{1/avg_tick_time:.2f} тиков/сек ({avg_tick_time*1000:.2f} мс/тик)")
 
     print("💾 Сохранение состояния...")
     world.save("simulation_state.json")
