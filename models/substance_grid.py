@@ -18,8 +18,6 @@ class SubstanceGrid:
         # храним в виде словаря ради гибкости (позже можно заменить на массив)
         self.grid: Dict[Tuple[int, int], List[Substance]] = {}
 
-    # === Доступ к ячейкам ===
-
     def get_cell(self, x: int, y: int) -> List[Substance]:
         """Возвращает список веществ в ячейке (может быть пустым)."""
         return self.grid.get((x, y), [])
@@ -35,11 +33,10 @@ class SubstanceGrid:
         if not (0 <= x < self.width and 0 <= y < self.height):
             return
 
-        cell = self.grid.setdefault((x, y), [])
+        cell = self.grid.setdefault((x, y), []) # get cell by (x, y) or create default empty list
         for existing in cell:
             if existing.name == substance.name:
                 existing.concentration += substance.concentration
-                existing.energy = (existing.energy + substance.energy) / 2
                 return
 
         # если такого вещества нет — добавить новое
@@ -83,7 +80,6 @@ class SubstanceGrid:
             for s in subs:
                 if s.name in by_name:
                     by_name[s.name].concentration += s.concentration
-                    by_name[s.name].energy = (by_name[s.name].energy + s.energy) / 2
                 else:
                     by_name[s.name] = s.clone()
             merged[pos] = list(by_name.values())

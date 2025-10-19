@@ -15,7 +15,7 @@ class Substance:
         self.type = type_
         self.concentration = concentration
         self.energy = energy
-        self.volatility = volatility  # 0.0 — стабильное, 0.1 — быстро распадается
+        self.volatility = volatility  # 0.0 — стабильное, 0.9 — быстро распадается
 
     def update(self):
         """Естественное рассеивание."""
@@ -27,14 +27,8 @@ class Substance:
         return self.concentration > 0
 
     def clone(self) -> 'Substance':
-        """Создаёт копию вещества (например, при делении клетки)."""
-        return Substance(
-            name=self.name,
-            type_=self.type,
-            concentration=self.concentration,
-            energy=self.energy,
-            volatility=self.volatility
-        )
+        """Создаёт копию вещества"""
+        return Substance.from_dict(self.to_dict())
 
     def to_dict(self):
         return {

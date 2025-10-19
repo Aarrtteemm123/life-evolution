@@ -1,4 +1,4 @@
-import random
+import math
 from typing import List, Dict, Any
 
 from models.gene import Gene
@@ -38,10 +38,6 @@ class Cell:
         for gene in self.genes:
             gene.try_activate(self, environment)
 
-        # обновление веществ
-        for substance in self.substances.values():
-            substance.update()
-
         # смерть, если энергия или здоровье на нуле
         if self.energy <= 0 or self.health <= 0:
             self.die()
@@ -53,13 +49,22 @@ class Cell:
             existing.concentration += substance.concentration
         else:
             self.substances[substance.name] = substance.clone()
-        self.energy += substance.energy * substance.concentration
+
+        substance.concentration = 0
 
     def emit(self, substance_name: str, amount: float, environment: Dict[str, Any]):
         """Выделяет вещество в окружающую среду."""
         sub = self.substances.get(substance_name)
-        if not sub or sub.concentration < amount:
+        if not sub:
             return
+        if sub.concentration < amount:
+            amount = sub.concentration
+
+        if amount * sub.energy > self.energy:
+            amount = self.energy / sub.energy
+
+        self.energy -= amount * sub.energy
+
         sub.concentration -= amount
         environment.setdefault("emitted", []).append(
             Substance(
@@ -69,12 +74,11 @@ class Cell:
                 energy=sub.energy,
             )
         )
-        self.energy -= amount * 0.2
 
     def move(self, dx: float, dy: float):
         """Перемещение клетки (упрощенно)."""
         self.position = (self.position[0] + dx, self.position[1] + dy)
-        self.energy -= 0.1 * (abs(dx) + abs(dy))
+        self.energy -= 0.1 * math.hypot(dx, dy)
 
     def divide(self) -> 'Cell':
         """Создает копию клетки с возможной мутацией."""
@@ -88,14 +92,18 @@ class Cell:
     def transfer_energy(self, neighbor: 'Cell', amount: float):
         """Передача энергии соседней клетке."""
         if self.energy < amount:
-            return
+            amount = self.energy
         self.energy -= amount
         neighbor.energy += amount
 
     def mutate(self):
         """Мутация всей клетки (генов и параметров)."""
+        new_genes = []
         for gene in self.genes:
-            gene.mutate()
+            new_gene = gene.mutate()
+            if new_gene:
+                new_genes.append(new_gene)
+        self.genes.extend(new_genes)
 
     def die(self):
         """Прекращает жизнь клетки."""
@@ -126,9 +134,6 @@ class Cell:
         cell.energy = data["energy"]
         cell.health = data["health"]
         cell.age = data["age"]
-
-        from models.gene import Gene
-        from models.substance import Substance
         cell.genes = [Gene.from_dict(g) for g in data.get("genes", [])]
         cell.substances = {s["name"]: Substance.from_dict(s) for s in data.get("substances", [])}
         return cell

@@ -7,6 +7,7 @@ class Action:
     ABSORB = 'ABSORB'           # поглощение вещества
     TRANSFER = 'TRANSFER'       # передача энергии соседним
     MOVE = 'MOVE'               # движение
+    NONE = 'NONE'               # бездействия
 
     def __init__(
         self,
@@ -48,13 +49,11 @@ class Action:
         elif self.type == Action.MOVE:
            pass
 
+        elif self.type == Action.NONE:
+           pass
+
     def clone(self) -> 'Action':
-        return Action(
-            type_=self.type,
-            power=self.power,
-            substance_name=self.substance_name,
-            direction=self.direction
-        )
+        return Action.from_dict(self.to_dict())
 
     def __repr__(self):
         info = [f"type={self.type}", f"power={self.power:.2f}"]
