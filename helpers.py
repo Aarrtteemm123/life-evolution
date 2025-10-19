@@ -4,12 +4,12 @@ import time
 
 from config import INITIAL_SUBSTANCES, CELL_COUNT, WORLD_WIDTH, WORLD_HEIGHT, SIMULATION_STEPS, SAVES_DIR, \
     ORGANIC_TYPES, TOXIN_TYPES, INORGANIC_TYPES, ALL_SUBSTANCE_NAMES
-from models.world import World
 from models.gene import Gene
 from models.trigger import Trigger
 from models.action import Action
 from models.cell import Cell
 from models.substance import Substance
+from models.world import World
 
 
 def random_substance() -> Substance:
@@ -62,7 +62,7 @@ def random_gene(all_substance_names: list[str]) -> Gene:
     # если действие связано с веществами — выберем из списка
     substance_name = None
     if action_type in (Action.EMIT, Action.ABSORB, Action.TRANSFER):
-        substance_name = random.choice(all_substance_names) if all_substance_names else "ORGANIC_1"
+        substance_name = random.choice(all_substance_names) if all_substance_names else "ORGANIC_0"
 
     # направление имеет смысл только для MOVE
     direction = (
@@ -108,7 +108,7 @@ def random_cell(x: int, y: int) -> Cell:
     return cell
 
 
-def populate_world(world: World):
+def populate_world(world: 'World'):
     """Заполняет мир веществами и клетками."""
     env = world.env
 

@@ -1,5 +1,5 @@
 import random
-from helpers import ALL_SUBSTANCE_NAMES
+from config import ALL_SUBSTANCE_NAMES
 from models.action import Action
 from models.trigger import Trigger
 
