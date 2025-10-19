@@ -1,25 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Evolution Simulation</title>
   <style>
-    body { margin: 0; background: #000; overflow: hidden; }
-    canvas { display: block; margin: 0 auto; background: #111; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #0c0c0c;
+      color: #ddd;
+      font-family: "Consolas", monospace;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Левая панель */
+    #sidebar {
+      width: 260px;
+      background: #111;
+      border-right: 2px solid #222;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    #sidebar h2 {
+      font-size: 20px;
+      color: #5df53b;
+      margin-bottom: 10px;
+    }
+
+    .checkbox-group label {
+      display: block;
+      margin: 6px 0;
+      cursor: pointer;
+    }
+
+    .stats {
+      font-size: 14px;
+      color: #aaa;
+      line-height: 1.5;
+      background: #181818;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    /* Поле симуляции */
+    #canvas-container {
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #080808;
+    }
+
+    canvas {
+      background: #111;
+      border: 2px solid #444;
+      box-shadow: 0 0 15px rgba(0, 255, 100, 0.15);
+      border-radius: 8px;
+    }
+
+    footer {
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
-  <canvas id="world" width="800" height="800"></canvas>
+  <!-- Боковое меню -->
+  <div id="sidebar">
+    <div>
+      <h2>🧬 Evolution</h2>
+      <div class="checkbox-group">
+        <label><input type="checkbox" id="toggle-organic" checked> Показать органику</label>
+        <label><input type="checkbox" id="toggle-inorganic" checked> Показать неорганику</label>
+        <label><input type="checkbox" id="toggle-toxin" checked> Показать токсины</label>
+      </div>
+
+      <h2>📊 Статистика</h2>
+      <div class="stats" id="stats">
+        tick: 0<br>
+        клетки: 0<br>
+        вещества: 0<br>
+        размер: 0×0
+      </div>
+    </div>
+
+    <footer>© 2025 Evolution Simulator</footer>
+  </div>
+
+  <!-- Поле -->
+  <div id="canvas-container">
+    <canvas id="world" width="800" height="800"></canvas>
+  </div>
+
   <script>
     const ws = new WebSocket(`ws://${location.host}/ws`);
     const canvas = document.getElementById("world");
     const ctx = canvas.getContext("2d");
+    const statsBox = document.getElementById("stats");
+
+    // чекбоксы
+    const showOrganic = document.getElementById("toggle-organic");
+    const showInorganic = document.getElementById("toggle-inorganic");
+    const showToxin = document.getElementById("toggle-toxin");
+
     let scale = 0;
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       renderWorld(data);
+      updateStats(data);
     };
+
+    function updateStats(data) {
+      const cellsCount = data.cells ? data.cells.length : 0;
+      const subsCount = data.grid?.substances?.length || 0;
+      const { width, height } = data.grid;
+      statsBox.innerHTML = `
+        tick: ${data.tick}<br>
+        клетки: ${cellsCount}<br>
+        вещества: ${subsCount}<br>
+        размер: ${width}×${height}
+      `;
+    }
 
     function renderWorld(data) {
       const { grid, cells, tick } = data;
@@ -29,22 +138,29 @@
       scale = Math.min(canvas.width / width, canvas.height / height);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // === ВЕЩЕСТВА ===
       if (substances) {
         substances.forEach(s => {
+          if (s.type === "TOXIN" && !showToxin.checked) return;
+          if (s.type === "ORGANIC" && !showOrganic.checked) return;
+          if (s.type === "INORGANIC" && !showInorganic.checked) return;
+
           switch (s.type) {
-            case "TOXIN": ctx.fillStyle = "#ff0040"; break;
-            case "ORGANIC": ctx.fillStyle = "#00ff40"; break;
-            case "INORGANIC": ctx.fillStyle = "#00ffff"; break;
-            default: ctx.fillStyle = "#888";
+            case "TOXIN": ctx.fillStyle = "#F55B3B"; break;
+            case "ORGANIC": ctx.fillStyle = "#5DF53B"; break;
+            case "INORGANIC": ctx.fillStyle = "#3BCAF5"; break;
+            default: ctx.fillStyle = "#888888";
           }
+
           ctx.globalAlpha = Math.min(1, s.concentration * 0.8 + 0.2);
           ctx.fillRect(s.x * scale, s.y * scale, scale, scale);
         });
       }
 
+      // === КЛЕТКИ ===
       if (cells) {
         ctx.globalAlpha = 1.0;
-        ctx.fillStyle = "#00aaff";
+        ctx.fillStyle = "#ffffff";
         cells.forEach(c => {
           const [x, y] = c.position;
           ctx.beginPath();
@@ -53,9 +169,10 @@
         });
       }
 
-      ctx.fillStyle = "#fff";
-      ctx.font = "16px monospace";
-      ctx.fillText(`tick: ${tick}`, 10, 20);
+      // === Граница поля ===
+      ctx.strokeStyle = "#555";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, width * scale, height * scale);
     }
   </script>
 </body>

@@ -86,13 +86,7 @@ def run_simulation():
 
     last_time = start_time
     for step in range(SIMULATION_STEPS):
-        step_start = time.perf_counter()
-
         world.update()
-
-        step_end = time.perf_counter()
-        step_duration = step_end - step_start
-
         if step % 10 == 0 and step > 0:
             now = time.perf_counter()
             elapsed = now - last_time
