@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Evolution Simulation Viewer</title>
+  <style>
+    body {
+      background: #000;
+      margin: 0;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #111;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="world" width="800" height="800"></canvas>
+  <script>
+    const ws = new WebSocket("ws://localhost:8765");
+    const canvas = document.getElementById("world");
+    const ctx = canvas.getContext("2d");
+
+    let scale = 0; // будет рассчитан динамически
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      renderWorld(data);
+    };
+
+    function renderWorld(data) {
+      const { grid, cells, tick } = data;
+      if (!grid) return;
+
+      const { width, height, substances } = grid;
+
+      // рассчитаем масштаб — сколько пикселей на одну клетку
+      scale = Math.min(canvas.width / width, canvas.height / height);
+
+      // очистим холст
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // отрисовка веществ
+      if (substances) {
+        substances.forEach(s => {
+          switch (s.type) {
+            case "TOXIN": ctx.fillStyle = "#ff0040"; break;
+            case "ORGANIC": ctx.fillStyle = "#00ff40"; break;
+            case "INORGANIC": ctx.fillStyle = "#00ffff"; break;
+            default: ctx.fillStyle = "#888";
+          }
+          ctx.globalAlpha = Math.min(1, s.concentration * 0.8 + 0.2);
+          ctx.fillRect(s.x * scale, s.y * scale, scale, scale);
+        });
+      }
+
+      // отрисовка клеток
+      if (cells) {
+        ctx.globalAlpha = 1.0;
+        cells.forEach(c => {
+          ctx.fillStyle = "#00aaff";
+          const [x, y] = c.position;
+          ctx.beginPath();
+          ctx.arc(x * scale, y * scale, scale * 0.3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      // подпись текущего тика
+      ctx.fillStyle = "#fff";
+      ctx.font = "16px monospace";
+      ctx.fillText(`tick: ${tick}`, 10, 20);
+    }
+  </script>
+</body>
+</html>

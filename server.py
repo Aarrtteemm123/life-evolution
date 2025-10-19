@@ -21,17 +21,16 @@ async def broadcast_state():
     while True:
         world.update()
 
-        # сериализация
         state = world.to_dict()
         message = json.dumps(state)
 
-        # отправляем всем подключенным клиентам
         if clients:
-            await asyncio.wait([ws.send(message) for ws in clients])
+            await asyncio.gather(*(ws.send(message) for ws in clients), return_exceptions=True)
 
-        await asyncio.sleep(0.1)  # 10 FPS (регулируй скорость обновления)
+        await asyncio.sleep(0.1)  # ~10 FPS
 
-async def handler(websocket, path):
+
+async def handler(websocket):
     clients.add(websocket)
     try:
         print("🌐 Клиент подключён")
@@ -39,6 +38,7 @@ async def handler(websocket, path):
     finally:
         clients.remove(websocket)
         print("❌ Клиент отключён")
+
 
 async def main():
     print('Server starting...')
