@@ -16,7 +16,7 @@ class World:
     def update(self):
         """Один шаг симуляции."""
         self.tick += 1
-        self.grid.diffuse()
+        #self.grid.diffuse()
         for cell in self.cells:
             env = {"grid": self.grid}
             cell.update(env)

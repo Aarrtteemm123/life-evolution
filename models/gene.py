@@ -1,3 +1,4 @@
+import random
 from typing import Dict, Any
 
 from models.action import Action
@@ -16,7 +17,8 @@ class Gene:
         trigger: Trigger,
         action: Action,
         efficiency: float = 1.0,
-        active: bool = True
+        active: bool = True,
+        mutation_rate: float = 0.07
     ):
         """
         :param receptor: имя вещества или параметра, на который реагирует ген
@@ -30,6 +32,7 @@ class Gene:
         self.action = action
         self.efficiency = efficiency
         self.active = active
+        self.mutation_rate = mutation_rate
 
 
     def try_activate(self, cell: 'Cell', environment: Dict[str, Any]):
@@ -50,26 +53,66 @@ class Gene:
             self.action.execute(cell, environment)
 
 
-    def mutate(self, rate: float = 0.05):
+    def mutate(self):
         """Простая мутация параметров гена."""
-        import random
-        if random.random() < rate:
-            self.efficiency *= random.uniform(0.9, 1.1)
-        if random.random() < rate * 0.2:
+        if not self.is_triggered_mutation():
+            return None
+
+        if self.is_triggered_mutation():
+            self.efficiency *= random.uniform(0.1, 10.0)
+
+        if self.is_triggered_mutation():
             self.active = not self.active
-        # мутация вложенных компонентов
-        self.trigger.threshold *= random.uniform(0.95, 1.05)
-        self.action.power *= random.uniform(0.9, 1.1)
+
+        if self.is_triggered_mutation():
+            self.trigger.threshold *= random.uniform(0.1, 10.0)
+
+        if self.is_triggered_mutation():
+            self.action.power *= random.uniform(0.1, 10.0)
+
+        if self.is_triggered_mutation():
+            return Gene.create_random_gene()
+
+        if self.is_triggered_mutation():
+            self.mutation_rate *= random.choice((1.2, 0.8))
+            self.mutation_rate = min(self.mutation_rate, 1.0)
+
+        return None
+
+    def is_triggered_mutation(self):
+        return random.random() < self.mutation_rate
+
+    @classmethod
+    def create_random_gene(cls) -> 'Gene':
+        """Создаёт случайный ген."""
+        receptor = random.choice(("energy", "glucose", "signal_A"))
+        threshold = random.uniform(0.1, 10.0)
+        mode = random.choice((Trigger.LESS, Trigger.GREATER, Trigger.EQUAL))
+        trigger = Trigger(threshold, mode)
+
+        action_type = random.choice((
+            Action.DIVIDE, Action.EMIT, Action.ABSORB,
+            Action.TRANSFER, Action.MOVE
+        ))
+
+        action = Action(
+            type_=action_type,
+            power=random.uniform(0.1, 10.0),
+            substance_name=random.choice(("glucose", "signal_A", "toxin_X")),
+            direction=(random.uniform(-1, 1), random.uniform(-1, 1))
+        )
+
+        return Gene(
+            receptor=receptor,
+            trigger=trigger,
+            action=action,
+            efficiency=random.uniform(0.1, 10.0)
+        )
+
 
     def clone(self) -> 'Gene':
-        """Создаёт копию гена (например, при делении клетки)."""
-        return Gene(
-            receptor=self.receptor,
-            trigger=self.trigger,
-            action=self.action.clone(),
-            efficiency=self.efficiency,
-            active=self.active
-        )
+        """Создаёт копию без мутации."""
+        return Gene.from_dict(self.to_dict())
 
     def to_dict(self):
         return {
@@ -77,7 +120,8 @@ class Gene:
             "trigger": self.trigger.to_dict(),
             "action": self.action.to_dict(),
             "efficiency": self.efficiency,
-            "active": self.active
+            "active": self.active,
+            "mutation_rate": self.mutation_rate,
         }
 
     @classmethod
@@ -89,7 +133,8 @@ class Gene:
             trigger=Trigger.from_dict(data["trigger"]),
             action=Action.from_dict(data["action"]),
             efficiency=data.get("efficiency", 1.0),
-            active=data.get("active", True)
+            active=data.get("active", True),
+            mutation_rate=data.get("mutation_rate", 0.07)
         )
 
     def __repr__(self):

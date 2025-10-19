@@ -13,7 +13,7 @@ class Trigger:
         elif self.mode == Trigger.GREATER:
             return value > self.threshold
         elif self.mode == Trigger.EQUAL:
-            return abs(value - self.threshold) < 1e-6
+            return abs(value - self.threshold) < 1e-4
         return False
 
     def to_dict(self):

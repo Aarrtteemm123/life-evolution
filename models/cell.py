@@ -1,3 +1,4 @@
+import random
 from typing import List, Dict, Any
 
 from models.gene import Gene
@@ -13,17 +14,14 @@ class Cell:
     def __init__(self, position=(0, 0)):
         # --- базовые параметры ---
         self.position = position
-        self.energy: float = 10.0
-        self.health: float = 10.0
+        self.energy: float = 100.0
+        self.health: float = 100.0
         self.age: int = 0
         self.alive: bool = True
 
         # --- внутреннее содержимое ---
         self.genes: List[Gene] = []
         self.substances: Dict[str, Substance] = {}  # вещества внутри клетки
-
-        # --- параметры эволюции ---
-        self.mutation_rate: float = 0.05
 
     def update(self, environment: Dict[str, Any]):
         """
@@ -80,13 +78,11 @@ class Cell:
 
     def divide(self) -> 'Cell':
         """Создает копию клетки с возможной мутацией."""
-        from copy import deepcopy
-        new_cell = deepcopy(self)
+        new_cell = self.clone()
         new_cell.age = 0
-        new_cell.mutate()
-        new_cell.position = (self.position[0] + 1, self.position[1])  # смещение
         self.energy /= 2
-        new_cell.energy = self.energy
+        new_cell.energy /= 2
+        new_cell.mutate()
         return new_cell
 
     def transfer_energy(self, neighbor: 'Cell', amount: float):
@@ -100,10 +96,6 @@ class Cell:
         """Мутация всей клетки (генов и параметров)."""
         for gene in self.genes:
             gene.mutate()
-        # вероятность появления нового гена
-        # (можно позже добавить фабрику генов)
-        if self.genes and self.mutation_rate > 0.01:
-            self.mutation_rate *= 1 + (0.1 * (0.5 - self.mutation_rate))
 
     def die(self):
         """Прекращает жизнь клетки."""
@@ -116,8 +108,7 @@ class Cell:
 
     def clone(self) -> 'Cell':
         """Создаёт копию без мутации."""
-        from copy import deepcopy
-        return deepcopy(self)
+        return Cell.from_dict(self.to_dict())
 
     def to_dict(self):
         return {
