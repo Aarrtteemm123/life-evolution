@@ -1,6 +1,7 @@
 from typing import Dict, Any
-from trigger import Trigger
-from action import Action
+
+from models.action import Action
+from models.trigger import Trigger
 
 
 class Gene:
@@ -81,8 +82,8 @@ class Gene:
 
     @classmethod
     def from_dict(cls, data):
-        from trigger import Trigger
-        from action import Action
+        from models.trigger import Trigger
+        from models.action import Action
         return cls(
             receptor=data["receptor"],
             trigger=Trigger.from_dict(data["trigger"]),

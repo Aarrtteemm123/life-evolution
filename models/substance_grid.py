@@ -1,5 +1,6 @@
 from typing import Dict, List, Tuple
-from substance import Substance
+
+from models.substance import Substance
 
 
 class SubstanceGrid:

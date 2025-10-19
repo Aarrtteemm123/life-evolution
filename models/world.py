@@ -1,7 +1,8 @@
 import json
 from typing import List
-from cell import Cell
-from substance_grid import SubstanceGrid
+
+from models.cell import Cell
+from models.substance_grid import SubstanceGrid
 
 
 class World:

@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
-from gene import Gene
-from substance import Substance
+
+from models.gene import Gene
+from models.substance import Substance
 
 
 class Cell:
@@ -135,8 +136,8 @@ class Cell:
         cell.health = data["health"]
         cell.age = data["age"]
 
-        from gene import Gene
-        from substance import Substance
+        from models.gene import Gene
+        from models.substance import Substance
         cell.genes = [Gene.from_dict(g) for g in data.get("genes", [])]
         cell.substances = {s["name"]: Substance.from_dict(s) for s in data.get("substances", [])}
         return cell

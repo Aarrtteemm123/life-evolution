@@ -1,13 +1,13 @@
 import random
 import time
 
-from config import INITIAL_SUBSTANCES, CELL_COUNT, WORLD_WIDTH, WORLD_HEIGHT, SIMULATION_STEPS
-from world import World
-from gene import Gene
-from trigger import Trigger
-from action import Action
-from cell import Cell
-from substance import Substance
+from config import INITIAL_SUBSTANCES, CELL_COUNT, WORLD_WIDTH, WORLD_HEIGHT, SIMULATION_STEPS, SAVES_DIR
+from models.world import World
+from models.gene import Gene
+from models.trigger import Trigger
+from models.action import Action
+from models.cell import Cell
+from models.substance import Substance
 
 
 def random_substance() -> Substance:
@@ -109,10 +109,10 @@ def run_simulation():
     print("⚡ Средняя скорость:", f"{1/avg_tick_time:.2f} тиков/сек ({avg_tick_time*1000:.2f} мс/тик)")
 
     print("💾 Сохранение состояния...")
-    world.save("simulation_state.json")
+    world.save(SAVES_DIR + "simulation_state.json")
 
     print("✅ Симуляция завершена и сохранена в simulation_state.json")
 
     # проверка загрузки
-    restored = World.load("simulation_state.json")
+    restored = World.load(SAVES_DIR + "simulation_state.json")
     print("♻️ Загрузка успешна! Tick:", restored.tick)
