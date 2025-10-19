@@ -23,7 +23,7 @@ class Cell:
         self.genes: List[Gene] = []
         self.substances: Dict[str, Substance] = {}  # вещества внутри клетки
 
-    def update(self, environment: Dict[str, Any]):
+    def update(self, environment: "Environment"):
         """
         Один шаг симуляции (время, тик).
         Клетка проверяет свои гены и реагирует на среду.
@@ -43,7 +43,7 @@ class Cell:
             self.die()
 
     def absorb(self, substance: Substance):
-        """Поглощает вещество (например, из среды)."""
+        """Поглощает вещество"""
         existing = self.substances.get(substance.name)
         if existing:
             existing.concentration += substance.concentration

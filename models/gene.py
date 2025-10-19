@@ -1,6 +1,5 @@
 import random
-from typing import Dict, Any
-
+from helpers import ALL_SUBSTANCE_NAMES
 from models.action import Action
 from models.trigger import Trigger
 
@@ -35,15 +34,22 @@ class Gene:
         self.mutation_rate = mutation_rate
 
 
-    def try_activate(self, cell: 'Cell', environment: Dict[str, Any]):
+    def try_activate(self, cell: "Cell", environment: "Environment"):
         """Проверяет условие и выполняет действие, если сработал триггер."""
         if not self.active:
             return
 
-        # значение рецептора — может быть из среды или состояния клетки
-        value = environment.get(self.receptor)
+        value = None
+
+        # --- 1. Попробуем получить значение вещества из среды ---
+        if self.receptor not in ("energy", "health", "age"):
+            x, y = int(cell.position[0]), int(cell.position[1])
+            substance = environment.grid.get_substance(x, y, self.receptor)
+            if substance:
+                value = substance.concentration
+
+        # --- 2. Если вещество не найдено, пробуем взять из клетки ---
         if value is None:
-            # если нет в среде, пробуем взять из параметров клетки
             value = getattr(cell, self.receptor, None)
 
         if value is None:
@@ -85,7 +91,7 @@ class Gene:
     @classmethod
     def create_random_gene(cls) -> 'Gene':
         """Создаёт случайный ген."""
-        receptor = random.choice(("energy", "glucose", "signal_A"))
+        receptor = random.choice(ALL_SUBSTANCE_NAMES.extend(["energy", "health", "age"]))
         threshold = random.uniform(0.1, 10.0)
         mode = random.choice((Trigger.LESS, Trigger.GREATER, Trigger.EQUAL))
         trigger = Trigger(threshold, mode)
@@ -98,7 +104,7 @@ class Gene:
         action = Action(
             type_=action_type,
             power=random.uniform(0.1, 10.0),
-            substance_name=random.choice(("glucose", "signal_A", "toxin_X")),
+            substance_name=random.choice(ALL_SUBSTANCE_NAMES),
             direction=(random.uniform(-1, 1), random.uniform(-1, 1))
         )
 
@@ -126,8 +132,6 @@ class Gene:
 
     @classmethod
     def from_dict(cls, data):
-        from models.trigger import Trigger
-        from models.action import Action
         return cls(
             receptor=data["receptor"],
             trigger=Trigger.from_dict(data["trigger"]),

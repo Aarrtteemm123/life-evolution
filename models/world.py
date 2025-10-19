@@ -2,42 +2,47 @@ import json
 from typing import List
 
 from models.cell import Cell
+from models.enviroment import Environment
 from models.substance_grid import SubstanceGrid
 
 
 class World:
-    """Мир симуляции: хранит клетки и сетку веществ."""
-
+    """Мир симуляции: управляет временем и средой."""
     def __init__(self, width: int, height: int):
-        self.grid = SubstanceGrid(width, height)
-        self.cells: List[Cell] = []
+        self.env = Environment(width, height)
         self.tick: int = 0
 
     def update(self):
-        """Один шаг симуляции."""
         self.tick += 1
-        #self.grid.diffuse()
-        for cell in self.cells:
-            env = {"grid": self.grid}
-            cell.update(env)
+        self.env.update()
 
 
     def to_dict(self):
+        """Преобразует состояние мира в словарь."""
         return {
             "tick": self.tick,
-            "grid": self.grid.to_dict(),
-            "cells": [c.to_dict() for c in self.cells]
+            "environment": {
+                "grid": self.env.grid.to_dict(),
+                "cells": [c.to_dict() for c in self.env.cells],
+            },
         }
 
     @classmethod
     def from_dict(cls, data):
-        world = cls(data["grid"]["width"], data["grid"]["height"])
-        world.tick = data.get("tick", 0)
-        world.grid = SubstanceGrid.from_dict(data["grid"])
-        world.cells = [Cell.from_dict(c) for c in data.get("cells", [])]
-        return world
+        """Создаёт объект мира из словаря."""
+        env_data = data.get("environment", {})
+        grid_data = env_data.get("grid", {})
+        cells_data = env_data.get("cells", [])
 
-    # === Сохранение/загрузка ===
+        # создаём сам мир и окружение
+        world = cls(grid_data["width"], grid_data["height"])
+        world.tick = data.get("tick", 0)
+
+        # восстанавливаем сетку и клетки
+        world.env.grid = SubstanceGrid.from_dict(grid_data)
+        world.env.cells = [Cell.from_dict(c) for c in cells_data]
+
+        return world
 
     def save(self, filename: str):
         with open(filename, "w", encoding="utf-8") as f:

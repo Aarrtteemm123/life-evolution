@@ -27,13 +27,8 @@ class Action:
         self.substance_name = substance_name
         self.direction = direction or (0, 0)
 
-    # === Выполнение действия ===
-    def execute(self, cell: 'Cell', environment: Dict[str, Any]):
-        """
-        Выполняет действие.
-        В данной версии environment — это просто словарь.
-        В будущем тут будет ссылка на объект World.
-        """
+    def execute(self, cell: 'Cell', environment: "Environment"):
+        """Выполняет действие"""
         if self.type == Action.DIVIDE:
            pass
 

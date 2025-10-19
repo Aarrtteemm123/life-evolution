@@ -22,7 +22,13 @@ class SubstanceGrid:
         """Возвращает список веществ в ячейке (может быть пустым)."""
         return self.grid.get((x, y), [])
 
-    def set_cell(self, x: int, y: int, substances: List[Substance]):
+    def get_substance(self, x: int, y: int, substance_name: str) -> Substance | None:
+        for sub in self.grid.get((x, y), []):
+            if sub.name == substance_name:
+                return sub
+        return None
+
+    def set_substances(self, x: int, y: int, substances: List[Substance]):
         """Полностью заменяет содержимое ячейки."""
         if not (0 <= x < self.width and 0 <= y < self.height):
             return
