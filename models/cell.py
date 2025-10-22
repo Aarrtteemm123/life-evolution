@@ -59,7 +59,7 @@ class Cell:
         substance.concentration = 0
 
     def emit(self, substance_name: str, amount: float, environment: "Environment"):
-        """Выделяет вещество в окружающую среду."""
+        """Выделяет вещество равномерно во все 8 направлений вокруг клетки."""
         sub = self.substances.get(substance_name)
         if not sub:
             return
@@ -68,27 +68,49 @@ class Cell:
         if sub.concentration < amount:
             amount = sub.concentration
 
-        # проверка по энергии клетки
-        energy_cost = amount * sub.energy
-        if energy_cost > self.energy:
-            # уменьшаем объём до допустимого по энергии
+        # проверяем энергию клетки
+        total_energy_cost = amount * sub.energy
+        if total_energy_cost > self.energy:
             amount = self.energy / sub.energy if sub.energy > 0 else 0
 
-        # уменьшить энергию клетки и концентрацию вещества внутри неё
+        # уменьшаем энергию и концентрацию внутри клетки
         self.energy -= amount * sub.energy
         sub.concentration -= amount
 
-        # создаём новый экземпляр вещества, выделяемого наружу
-        emitted = Substance(
+        # создаём вещество, которое будет распределено вокруг
+        emitted_total = Substance(
             name=sub.name,
             type_=sub.type,
             concentration=amount,
             energy=sub.energy,
         )
 
-        # добавить вещество в сетку среды (в позицию клетки)
-        x, y = int(self.position[0]), int(self.position[1])
-        environment.add_substance(x, y, emitted)
+        # координата клетки
+        cx, cy = int(self.position[0]), int(self.position[1])
+
+        # распределение вещества на все 8 направлений + центр
+        directions = [
+            (0, 0),  # можно оставить часть вещества под самой клеткой
+            (-1, 0), (1, 0), (0, -1), (0, 1),
+            (-1, -1), (-1, 1), (1, -1), (1, 1),
+        ]
+
+        spread_concentration = emitted_total.concentration / len(directions)
+
+        for dx, dy in directions:
+            x, y = cx + dx, cy + dy
+            if not (0 <= x < environment.grid.width and 0 <= y < environment.grid.height):
+                continue
+
+            environment.add_substance(
+                x, y,
+                Substance(
+                    name=sub.name,
+                    type_=sub.type,
+                    concentration=spread_concentration,
+                    energy=sub.energy,
+                )
+            )
 
     def move(self, dx: float, dy: float):
         """Перемещение клетки (упрощенно)."""

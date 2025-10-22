@@ -83,7 +83,6 @@ def random_gene(all_substance_names: list[str]) -> Gene:
         receptor=receptor,
         trigger=trigger,
         action=action,
-        efficiency=random.uniform(0.5, 1.5),
         active=True
     )
 

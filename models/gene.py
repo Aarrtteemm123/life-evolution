@@ -15,7 +15,6 @@ class Gene:
         receptor: str,
         trigger: Trigger,
         action: Action,
-        efficiency: float = 1.0,
         active: bool = True,
         mutation_rate: float = 0.07
     ):
@@ -23,13 +22,11 @@ class Gene:
         :param receptor: имя вещества или параметра, на который реагирует ген
         :param trigger: условие активации
         :param action: действие при активации
-        :param efficiency: коэффициент силы действия
         :param active: активен ли ген (может быть выключен)
         """
         self.receptor = receptor
         self.trigger = trigger
         self.action = action
-        self.efficiency = efficiency
         self.active = active
         self.mutation_rate = mutation_rate
 
@@ -65,9 +62,6 @@ class Gene:
             return None
 
         if self.is_triggered_mutation():
-            self.efficiency *= random.uniform(0.1, 10.0)
-
-        if self.is_triggered_mutation():
             self.active = not self.active
 
         if self.is_triggered_mutation():
@@ -91,7 +85,8 @@ class Gene:
     @classmethod
     def create_random_gene(cls) -> 'Gene':
         """Создаёт случайный ген."""
-        receptor = random.choice(ALL_SUBSTANCE_NAMES.extend(["energy", "health", "age"]))
+        all_receptors = ALL_SUBSTANCE_NAMES + ["energy", "health", "age"]
+        receptor = random.choice(all_receptors)
         threshold = random.uniform(0.1, 10.0)
         mode = random.choice((Trigger.LESS, Trigger.GREATER, Trigger.EQUAL))
         trigger = Trigger(threshold, mode)
@@ -111,8 +106,7 @@ class Gene:
         return Gene(
             receptor=receptor,
             trigger=trigger,
-            action=action,
-            efficiency=random.uniform(0.1, 10.0)
+            action=action
         )
 
 
@@ -125,7 +119,6 @@ class Gene:
             "receptor": self.receptor,
             "trigger": self.trigger.to_dict(),
             "action": self.action.to_dict(),
-            "efficiency": self.efficiency,
             "active": self.active,
             "mutation_rate": self.mutation_rate,
         }
@@ -136,11 +129,10 @@ class Gene:
             receptor=data["receptor"],
             trigger=Trigger.from_dict(data["trigger"]),
             action=Action.from_dict(data["action"]),
-            efficiency=data.get("efficiency", 1.0),
             active=data.get("active", True),
             mutation_rate=data.get("mutation_rate", 0.07)
         )
 
     def __repr__(self):
         return (f"Gene(receptor={self.receptor}, {self.trigger}, "
-                f"{self.action}, eff={self.efficiency:.2f}, active={self.active})")
+                f"{self.action}, active={self.active})")
