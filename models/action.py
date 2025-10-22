@@ -5,9 +5,7 @@ class Action:
     DIVIDE = 'DIVIDE'           # деление клетки
     EMIT = 'EMIT'               # выделение вещества
     ABSORB = 'ABSORB'           # поглощение вещества
-    TRANSFER = 'TRANSFER'       # передача энергии соседним
     MOVE = 'MOVE'               # движение
-    NONE = 'NONE'               # бездействия
     HEALS = 'HEALS'             # лечения
 
     def __init__(
@@ -31,25 +29,21 @@ class Action:
     def execute(self, cell: 'Cell', environment: "Environment"):
         """Выполняет действие"""
         if self.type == Action.DIVIDE:
-           pass
+           cell.divide()
 
         elif self.type == Action.EMIT and self.substance_name:
-            pass
+            cell.emit(self.substance_name, self.power, environment)
 
         elif self.type == Action.ABSORB and self.substance_name:
-           pass
-
-        elif self.type == Action.TRANSFER:
-            pass
+            x, y = cell.position
+            substance = environment.grid.get_substance(x, y, self.substance_name)
+            cell.absorb(substance)
 
         elif self.type == Action.MOVE:
-           pass
+           cell.move(*self.direction)
 
         elif self.type == Action.HEALS:
-           pass
-
-        elif self.type == Action.NONE:
-           pass
+           cell.heals()
 
     def clone(self) -> 'Action':
         return Action.from_dict(self.to_dict())

@@ -56,19 +56,21 @@ def random_gene(all_substance_names: list[str]) -> Gene:
     # --- Действие ---
     action_type = random.choice([
         Action.DIVIDE, Action.EMIT, Action.ABSORB,
-        Action.TRANSFER, Action.MOVE, Action.HEALS, Action.NONE
+        Action.MOVE, Action.HEALS
     ])
 
     # если действие связано с веществами — выберем из списка
     substance_name = None
-    if action_type in (Action.EMIT, Action.ABSORB, Action.TRANSFER):
+    if action_type in (Action.EMIT, Action.ABSORB):
         substance_name = random.choice(all_substance_names) if all_substance_names else "ORGANIC_0"
 
-    # направление имеет смысл только для MOVE
-    direction = (
-        (random.uniform(-1, 1), random.uniform(-1, 1))
-        if action_type == Action.MOVE else (0.0, 0.0)
-    )
+    # направление имеет смысл только для MOVE и TRANSFER
+    if action_type == Action.MOVE:
+        direction = (
+            (random.uniform(-1, 1), random.uniform(-1, 1))
+        )
+    else:
+        direction = (0.0, 0.0)
 
     action = Action(
         type_=action_type,

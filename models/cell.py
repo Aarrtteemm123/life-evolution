@@ -1,5 +1,6 @@
 import math
-from typing import List, Dict, Any
+import random
+from typing import List, Dict
 
 from models.gene import Gene
 from models.substance import Substance
@@ -47,6 +48,8 @@ class Cell:
 
     def absorb(self, substance: Substance):
         """Поглощает вещество"""
+        if not substance:
+            return
         existing = self.substances.get(substance.name)
         if existing:
             existing.concentration += substance.concentration
@@ -55,28 +58,37 @@ class Cell:
 
         substance.concentration = 0
 
-    def emit(self, substance_name: str, amount: float, environment: Dict[str, Any]):
+    def emit(self, substance_name: str, amount: float, environment: "Environment"):
         """Выделяет вещество в окружающую среду."""
         sub = self.substances.get(substance_name)
         if not sub:
             return
+
+        # ограничиваем количество выделяемого вещества
         if sub.concentration < amount:
             amount = sub.concentration
 
-        if amount * sub.energy > self.energy:
-            amount = self.energy / sub.energy
+        # проверка по энергии клетки
+        energy_cost = amount * sub.energy
+        if energy_cost > self.energy:
+            # уменьшаем объём до допустимого по энергии
+            amount = self.energy / sub.energy if sub.energy > 0 else 0
 
+        # уменьшить энергию клетки и концентрацию вещества внутри неё
         self.energy -= amount * sub.energy
-
         sub.concentration -= amount
-        environment.setdefault("emitted", []).append(
-            Substance(
-                name=sub.name,
-                type_=sub.type,
-                concentration=amount,
-                energy=sub.energy,
-            )
+
+        # создаём новый экземпляр вещества, выделяемого наружу
+        emitted = Substance(
+            name=sub.name,
+            type_=sub.type,
+            concentration=amount,
+            energy=sub.energy,
         )
+
+        # добавить вещество в сетку среды (в позицию клетки)
+        x, y = int(self.position[0]), int(self.position[1])
+        environment.add_substance(x, y, emitted)
 
     def move(self, dx: float, dy: float):
         """Перемещение клетки (упрощенно)."""
@@ -89,15 +101,12 @@ class Cell:
         new_cell.age = 0
         self.energy /= 2
         new_cell.energy /= 2
+        new_cell.position = (
+            self.position[0] + random.choice((0.5, -0.5)),
+            self.position[1] + random.choice((0.5, -0.5))
+        )
         new_cell.mutate()
         return new_cell
-
-    def transfer_energy(self, neighbor: 'Cell', amount: float):
-        """Передача энергии соседней клетке."""
-        if self.energy < amount:
-            amount = self.energy
-        self.energy -= amount
-        neighbor.energy += amount
 
     def mutate(self):
         """Мутация всей клетки (генов и параметров)."""
