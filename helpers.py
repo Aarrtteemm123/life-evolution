@@ -56,7 +56,7 @@ def random_gene(all_substance_names: list[str]) -> Gene:
     # --- Действие ---
     action_type = random.choice([
         Action.DIVIDE, Action.EMIT, Action.ABSORB,
-        Action.TRANSFER, Action.MOVE, Action.NONE
+        Action.TRANSFER, Action.MOVE, Action.HEALS, Action.NONE
     ])
 
     # если действие связано с веществами — выберем из списка

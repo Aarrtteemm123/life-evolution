@@ -34,12 +34,15 @@ class Cell:
         self.age += 1
         self.energy -= 0.1  # базовое потребление
 
+        if self.energy <= 0:
+            self.health -= 1
+
         # активация генов
         for gene in self.genes:
             gene.try_activate(self, environment)
 
         # смерть, если энергия или здоровье на нуле
-        if self.energy <= 0 or self.health <= 0:
+        if self.health <= 0:
             self.die()
 
     def absorb(self, substance: Substance):
@@ -110,6 +113,12 @@ class Cell:
         self.alive = False
         self.health = 0
         self.energy = 0
+
+    def heals(self):
+        if self.energy < 1 or self.health > 100:
+            return
+        self.energy -= 1
+        self.health += 1
 
     def is_alive(self) -> bool:
         return self.alive

@@ -98,7 +98,7 @@ class Gene:
 
         action_type = random.choice((
             Action.DIVIDE, Action.EMIT, Action.ABSORB,
-            Action.TRANSFER, Action.MOVE, Action.NONE
+            Action.TRANSFER, Action.MOVE, Action.HEALS, Action.NONE
         ))
 
         action = Action(

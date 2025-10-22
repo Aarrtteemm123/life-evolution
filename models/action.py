@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import Optional
 
 
 class Action:
@@ -8,6 +8,7 @@ class Action:
     TRANSFER = 'TRANSFER'       # передача энергии соседним
     MOVE = 'MOVE'               # движение
     NONE = 'NONE'               # бездействия
+    HEALS = 'HEALS'             # лечения
 
     def __init__(
         self,
@@ -42,6 +43,9 @@ class Action:
             pass
 
         elif self.type == Action.MOVE:
+           pass
+
+        elif self.type == Action.HEALS:
            pass
 
         elif self.type == Action.NONE:
