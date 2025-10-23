@@ -2,7 +2,7 @@ import os
 import random
 import time
 
-from config import INITIAL_SUBSTANCES, CELL_COUNT, WORLD_WIDTH, WORLD_HEIGHT, SIMULATION_STEPS, SAVES_DIR, \
+from config import CELL_COUNT, WORLD_WIDTH, WORLD_HEIGHT, SIMULATION_STEPS, SAVES_DIR, \
     ORGANIC_TYPES, TOXIN_TYPES, INORGANIC_TYPES, ALL_SUBSTANCE_NAMES
 from models.gene import Gene
 from models.trigger import Trigger
@@ -11,28 +11,34 @@ from models.cell import Cell
 from models.substance import Substance
 from models.world import World
 
+# === Конфигурация распределения веществ ===
+SUBSTANCE_DISTRIBUTION = {
+    Substance.ORGANIC: 500,     # количество органических веществ
+    Substance.TOXIN: 100,       # количество токсинов
+    Substance.INORGANIC: 50    # количество неорганических соединений
+}
+
 
 def random_substance() -> Substance:
-    """Создаёт случайное вещество из предопределённых категорий."""
-    category = random.choices(
-        [Substance.ORGANIC, Substance.TOXIN, Substance.INORGANIC],
-        weights=[0.15, 0.25, 0.60],  # распределение вероятностей появления
-        k=1
-    )[0]
+    """Создаёт случайное вещество, используя словарь распределения."""
+    # вычисляем суммарное количество (для нормализации вероятностей)
+    total = sum(SUBSTANCE_DISTRIBUTION.values())
+    categories = list(SUBSTANCE_DISTRIBUTION.keys())
+    weights = [SUBSTANCE_DISTRIBUTION[c] / total for c in categories]
+
+    # случайно выбираем категорию с учётом её доли
+    category = random.choices(categories, weights=weights, k=1)[0]
 
     if category == Substance.ORGANIC:
         data = random.choice(ORGANIC_TYPES)
-        type_ = Substance.ORGANIC
     elif category == Substance.TOXIN:
         data = random.choice(TOXIN_TYPES)
-        type_ = Substance.TOXIN
     else:
         data = random.choice(INORGANIC_TYPES)
-        type_ = Substance.INORGANIC
 
     concentration = random.uniform(*data["concentration"])
     energy = random.uniform(*data["energy"])
-    return Substance(data["name"], type_, concentration, energy)
+    return Substance(data["name"], category, concentration, energy)
 
 
 
@@ -114,7 +120,7 @@ def populate_world(world: 'World'):
     env = world.env
 
     # 1. Заполнение сетки веществ
-    for _ in range(INITIAL_SUBSTANCES):
+    for _ in range(sum(SUBSTANCE_DISTRIBUTION.values())):
         x = random.randint(0, env.grid.width - 1)
         y = random.randint(0, env.grid.height - 1)
         env.add_substance(x, y, random_substance())
