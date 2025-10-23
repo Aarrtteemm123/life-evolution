@@ -3,20 +3,13 @@ import random
 import time
 
 from config import CELL_COUNT, WORLD_WIDTH, WORLD_HEIGHT, SIMULATION_STEPS, SAVES_DIR, \
-    ORGANIC_TYPES, TOXIN_TYPES, INORGANIC_TYPES, ALL_SUBSTANCE_NAMES
+    ORGANIC_TYPES, TOXIN_TYPES, INORGANIC_TYPES, ALL_SUBSTANCE_NAMES, SUBSTANCE_DISTRIBUTION
 from models.gene import Gene
 from models.trigger import Trigger
 from models.action import Action
 from models.cell import Cell
 from models.substance import Substance
 from models.world import World
-
-# === Конфигурация распределения веществ ===
-SUBSTANCE_DISTRIBUTION = {
-    Substance.ORGANIC: 500,     # количество органических веществ
-    Substance.TOXIN: 100,       # количество токсинов
-    Substance.INORGANIC: 50    # количество неорганических соединений
-}
 
 
 def random_substance() -> Substance:

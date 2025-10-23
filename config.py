@@ -2,6 +2,12 @@
 WORLD_WIDTH = 100
 WORLD_HEIGHT = 100
 CELL_COUNT = 100
+# === Конфигурация распределения веществ ===
+SUBSTANCE_DISTRIBUTION = {
+    "ORGANIC": 500,     # количество органических веществ
+    "TOXIN": 100,       # количество токсинов
+    "INORGANIC": 50    # количество неорганических соединений
+}
 SIMULATION_STEPS = 100
 FPS = 10
 SAVES_DIR = "saves/"
