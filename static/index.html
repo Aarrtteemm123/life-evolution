@@ -120,7 +120,7 @@
 
     function updateStats(data) {
       const env = data.environment;
-      const stats = env.stats;
+      const stats = env.env_stats;
       if (!env || !env.grid) return;
 
       const cellsCount = env.cells ? env.cells.length : 0;
