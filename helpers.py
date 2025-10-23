@@ -30,8 +30,7 @@ def random_substance() -> Substance:
         data = random.choice(INORGANIC_TYPES)
 
     concentration = random.uniform(*data["concentration"])
-    energy = random.uniform(*data["energy"])
-    return Substance(data["name"], category, concentration, energy)
+    return Substance(data["name"], category, concentration, data["energy"])
 
 
 

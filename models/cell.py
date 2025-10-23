@@ -2,6 +2,7 @@ import math
 import random
 from typing import List, Dict
 
+from config import ORGANIC_TYPES
 from models.gene import Gene
 from models.substance import Substance
 
@@ -44,7 +45,7 @@ class Cell:
 
         # смерть, если энергия или здоровье на нуле
         if self.health <= 0:
-            self.die()
+            self.die(environment)
 
     def absorb(self, substance: Substance):
         """Поглощает вещество"""
@@ -139,11 +140,44 @@ class Cell:
                 new_genes.append(new_gene)
         self.genes.extend(new_genes)
 
-    def die(self):
-        """Прекращает жизнь клетки."""
+    def die(self, environment: "Environment"):
+        """Прекращает жизнь клетки и выделяет вещества в окружающую среду."""
+
         self.alive = False
-        self.health = 0
+        cx, cy = int(self.position[0]), int(self.position[1])
+
+        # === 1. Выбросить все внутренние вещества в среду ===
+        for sub in self.substances.values():
+            if sub.concentration <= 0:
+                continue
+            environment.add_substance(cx, cy, sub.clone())
+
+        # === 2. Конвертировать энергию в органику ===
+        if self.energy > 0:
+            # случайный тип органики из конфигурации
+            org_data = random.choice(ORGANIC_TYPES)
+            organic_name = org_data["name"]
+            organic_energy = org_data["energy"]
+
+            # расчёт концентрации по энергии
+            organic_concentration = self.energy / organic_energy
+
+            # создание органического вещества
+            organic = Substance(
+                name=organic_name,
+                type_=Substance.ORGANIC,
+                concentration=organic_concentration,
+                energy=organic_energy,
+            )
+
+            # добавить всё в текущую ячейку
+            environment.add_substance(cx, cy, organic)
+
+        # === 3. Очистка и обнуление клетки ===
         self.energy = 0
+        self.health = 0
+        self.substances.clear()
+        self.substances = []
 
     def heals(self):
         if self.energy < 1 or self.health > 100:
