@@ -12,8 +12,7 @@ class Action:
         self,
         type_: str,
         power: float = 1.0,
-        substance_name: Optional[str] = None,
-        direction: Optional[tuple] = None
+        substance_name: Optional[str] = None
     ):
         """
         :param type_: тип действия
