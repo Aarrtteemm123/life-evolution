@@ -1,7 +1,6 @@
 class Trigger:
     LESS = 'LESS'
     GREATER = 'GREATER'
-    EQUAL = 'EQUAL'
 
     def __init__(self, threshold: float, mode: str = LESS):
         self.threshold = threshold
@@ -12,8 +11,6 @@ class Trigger:
             return value < self.threshold
         elif self.mode == Trigger.GREATER:
             return value > self.threshold
-        elif self.mode == Trigger.EQUAL:
-            return abs(value - self.threshold) < 1e-4
         return False
 
     def to_dict(self):

@@ -74,10 +74,6 @@ class Gene:
             return Gene.create_random_gene()
 
         if self.is_triggered_mutation():
-            self.mutation_rate *= random.choice((1.2, 0.8))
-            self.mutation_rate = min(self.mutation_rate, 1.0)
-
-        if self.is_triggered_mutation():
             self.action.move_mode = random.choice([
                 Action.MOVE_RANDOM,
                 Action.MOVE_TOWARD,
@@ -85,6 +81,10 @@ class Gene:
                 Action.MOVE_AROUND,
                 None,
             ])
+
+        if self.is_triggered_mutation():
+            self.mutation_rate *= random.choice((1.2, 0.8))
+            self.mutation_rate = min(self.mutation_rate, 1.0)
 
         return None
 
@@ -97,7 +97,7 @@ class Gene:
         all_receptors = ALL_SUBSTANCE_NAMES + ["energy", "health", "age"]
         receptor = random.choice(all_receptors)
         threshold = random.uniform(0.1, 10.0)
-        mode = random.choice((Trigger.LESS, Trigger.GREATER, Trigger.EQUAL))
+        mode = random.choice((Trigger.LESS, Trigger.GREATER))
         trigger = Trigger(threshold, mode)
 
         action_type = random.choice((

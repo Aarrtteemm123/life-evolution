@@ -31,7 +31,7 @@ class Action:
         self.type = type_
         self.power = power
         self.substance_name = substance_name
-        self.move_mode = move_mode or Action.MOVE_RANDOM
+        self.move_mode = move_mode
 
     def execute(self, cell: 'Cell', environment: "Environment"):
         """Выполняет действие"""
@@ -122,6 +122,6 @@ class Action:
             type_=data["type"],
             power=data.get("power", 1.0),
             substance_name=data.get("substance_name"),
-            move_mode=data.get("move_mode", Action.MOVE_RANDOM),
+            move_mode=data.get("move_mode"),
         )
 

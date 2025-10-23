@@ -48,7 +48,7 @@ def random_gene(all_substance_names: list[str]) -> Gene:
         receptor = "energy"
 
     threshold = random.uniform(0.1, 10.0)
-    mode = random.choice([Trigger.LESS, Trigger.GREATER, Trigger.EQUAL])
+    mode = random.choice([Trigger.LESS, Trigger.GREATER])
     trigger = Trigger(threshold, mode)
 
     # --- Действие ---
