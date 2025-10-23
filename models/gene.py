@@ -119,7 +119,7 @@ class Gene:
 
         action = Action(
             type_=action_type,
-            power=random.uniform(0.1, 2.0),
+            power=random.uniform(0.1, 10.0),
             substance_name=substance_name,
             move_mode=move_mode,
         )

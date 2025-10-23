@@ -55,7 +55,7 @@ def random_gene(all_substance_names: list[str]) -> Gene:
     else:
         receptor = "energy"
 
-    threshold = random.uniform(0.5, 5.0)
+    threshold = random.uniform(0.1, 10.0)
     mode = random.choice([Trigger.LESS, Trigger.GREATER, Trigger.EQUAL])
     trigger = Trigger(threshold, mode)
 
@@ -81,7 +81,7 @@ def random_gene(all_substance_names: list[str]) -> Gene:
 
     action = Action(
         type_=action_type,
-        power=random.uniform(0.5, 2.0),
+        power=random.uniform(0.1, 10.0),
         substance_name=substance_name,
         move_mode=move_mode
     )
@@ -99,8 +99,8 @@ def random_cell(x: int, y: int) -> Cell:
     cell = Cell(position=(x + random.random(), y + random.random()))
 
     # Начальные параметры
-    cell.energy = random.uniform(20.0, 80.0)   # жизнеспособная энергия
-    cell.health = random.uniform(40.0, 100.0)  # от частично повреждённой до здоровой
+    cell.energy = 100.0
+    cell.health = 100.0
 
     # Количество генов: чаще 2–6, но иногда до 10
     gene_count = random.choices(
