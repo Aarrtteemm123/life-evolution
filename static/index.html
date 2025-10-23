@@ -120,7 +120,7 @@
 
     function updateStats(data) {
       const env = data.environment;
-      const stats = data.stats;
+      const stats = env.stats;
       if (!env || !env.grid) return;
 
       const cellsCount = env.cells ? env.cells.length : 0;
@@ -128,7 +128,7 @@
       const { width, height } = env.grid;
 
       statsBox.innerHTML = `
-        <b>Tick:</b> ${stats.tick}<br>
+        <b>Tick:</b> ${data.tick}<br>
         <b>Клетки:</b> ${stats.cells_total}<br>
         <b>Средняя энергия:</b> ${stats.avg_energy.toFixed(2)}<br>
         <b>Среднее здоровье:</b> ${stats.avg_health.toFixed(2)}<br>
