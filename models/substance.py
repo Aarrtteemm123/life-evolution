@@ -20,7 +20,7 @@ class Substance:
     def update(self):
         """Естественное рассеивание."""
         self.concentration *= (1.0 - self.volatility)
-        if self.concentration < 0.001:
+        if self.concentration < 0.01:
             self.concentration = 0
 
     def is_active(self) -> bool:

@@ -120,6 +120,7 @@
 
     function updateStats(data) {
       const env = data.environment;
+      const stats = data.stats;
       if (!env || !env.grid) return;
 
       const cellsCount = env.cells ? env.cells.length : 0;
@@ -127,10 +128,19 @@
       const { width, height } = env.grid;
 
       statsBox.innerHTML = `
-        tick: ${data.tick}<br>
-        клетки: ${cellsCount}<br>
-        вещества: ${subsCount}<br>
-        размер: ${width}×${height}
+        <b>Tick:</b> ${stats.tick}<br>
+        <b>Клетки:</b> ${stats.cells_total}<br>
+        <b>Средняя энергия:</b> ${stats.avg_energy.toFixed(2)}<br>
+        <b>Среднее здоровье:</b> ${stats.avg_health.toFixed(2)}<br>
+        <b>Средний возраст:</b> ${stats.avg_age.toFixed(1)}<br>
+        <b>Среднее количество генов:</b> ${stats.avg_genes.toFixed(1)}<br>
+        <hr>
+        <b>Всего веществ:</b> ${stats.substances_total}<br>
+        <span style="color:#5DF53B">Органика:</span> ${stats.substances_by_type.ORGANIC}<br>
+        <span style="color:#3BCAF5">Неорганика:</span> ${stats.substances_by_type.INORGANIC}<br>
+        <span style="color:#F55B3B">Токсины:</span> ${stats.substances_by_type.TOXIN}<br>
+        <hr>
+        <b>Размер мира:</b> ${width}×${height}
       `;
     }
 

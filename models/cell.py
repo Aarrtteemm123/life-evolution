@@ -38,6 +38,7 @@ class Cell:
 
         if self.energy <= 0:
             self.health -= 1
+            self.energy = 0
 
         # активация генов
         for gene in self.genes:

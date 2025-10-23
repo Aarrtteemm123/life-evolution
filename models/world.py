@@ -1,4 +1,6 @@
 import json
+import statistics
+from collections import Counter
 from typing import List
 
 from models.cell import Cell
@@ -16,14 +18,51 @@ class World:
         self.tick += 1
         self.env.update()
 
-
     def to_dict(self):
-        """Преобразует состояние мира в словарь."""
+        """Сериализация мира + статистика."""
+        env = self.env
+        cells = env.cells
+        grid = env.grid
+
+        # === 1. Собираем статистику по клеткам ===
+        energies = [c.energy for c in cells if c.alive]
+        healths = [c.health for c in cells if c.alive]
+        ages = [c.age for c in cells if c.alive]
+        gene_counts = [len(c.genes) for c in cells if c.alive]
+
+        avg_energy = statistics.mean(energies) if energies else 0
+        avg_health = statistics.mean(healths) if healths else 0
+        avg_age = statistics.mean(ages) if ages else 0
+        avg_genes = statistics.mean(gene_counts) if gene_counts else 0
+
+        # === 2. Статистика по веществам ===
+        all_substances = [
+            s.type
+            for subs in grid.grid.values()
+            for s in subs
+        ]
+
+        type_counts = Counter(all_substances)
+        total_subs = sum(type_counts.values())
+
+        # гарантируем наличие всех трёх категорий
+        by_type = {t: type_counts.get(t, 0) for t in ["ORGANIC", "INORGANIC", "TOXIN"]}
+
+        # === 3. Формирование итогового состояния ===
         return {
-            "tick": self.tick,
             "environment": {
-                "grid": self.env.grid.to_dict(),
-                "cells": [c.to_dict() for c in self.env.cells],
+                "grid": grid.to_dict(),
+                "cells": [c.to_dict() for c in cells],
+            },
+            "stats": {
+                "tick": self.tick,
+                "cells_total": len(cells),
+                "avg_energy": avg_energy,
+                "avg_health": avg_health,
+                "avg_age": avg_age,
+                "avg_genes": avg_genes,
+                "substances_total": total_subs,
+                "substances_by_type": by_type,
             },
         }
 

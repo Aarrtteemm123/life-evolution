@@ -18,6 +18,21 @@ class SubstanceGrid:
         # храним в виде словаря ради гибкости (позже можно заменить на массив)
         self.grid: Dict[Tuple[int, int], List[Substance]] = {}
 
+    def update(self):
+        """Обновляет вещества и удаляет неактивные (с нулевой концентрацией)."""
+        for pos in list(self.grid.keys()):
+            new_subs = []
+            for sub in self.grid[pos]:
+                sub.update()
+                if sub.is_active():
+                    new_subs.append(sub)
+
+            if new_subs:
+                self.grid[pos] = new_subs
+            else:
+                del self.grid[pos]
+
+
     def get_cell(self, x: int, y: int) -> List[Substance]:
         """Возвращает список веществ в ячейке (может быть пустым)."""
         return self.grid.get((x, y), [])
