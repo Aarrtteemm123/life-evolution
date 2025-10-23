@@ -59,15 +59,25 @@ def random_gene(all_substance_names: list[str]) -> Gene:
         Action.MOVE, Action.HEALS
     ])
 
+    move_mode = None
+    if action_type == Action.MOVE:
+        move_mode = random.choice([
+            Action.MOVE_RANDOM,
+            Action.MOVE_TOWARD,
+            Action.MOVE_AWAY,
+            Action.MOVE_AROUND,
+        ])
+
     # если действие связано с веществами — выберем из списка
     substance_name = None
-    if action_type in (Action.EMIT, Action.ABSORB):
+    if action_type in (Action.EMIT, Action.ABSORB, Action.MOVE):
         substance_name = random.choice(all_substance_names) if all_substance_names else "ORGANIC_0"
 
     action = Action(
         type_=action_type,
         power=random.uniform(0.5, 2.0),
-        substance_name=substance_name
+        substance_name=substance_name,
+        move_mode=move_mode
     )
 
     return Gene(

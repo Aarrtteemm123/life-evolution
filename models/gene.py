@@ -77,6 +77,15 @@ class Gene:
             self.mutation_rate *= random.choice((1.2, 0.8))
             self.mutation_rate = min(self.mutation_rate, 1.0)
 
+        if self.is_triggered_mutation():
+            self.action.move_mode = random.choice([
+                Action.MOVE_RANDOM,
+                Action.MOVE_TOWARD,
+                Action.MOVE_AWAY,
+                Action.MOVE_AROUND,
+                None,
+            ])
+
         return None
 
     def is_triggered_mutation(self):
@@ -96,10 +105,23 @@ class Gene:
             Action.MOVE, Action.HEALS
         ))
 
+        if action_type == Action.MOVE:
+            move_mode = random.choice([
+                Action.MOVE_RANDOM,
+                Action.MOVE_TOWARD,
+                Action.MOVE_AWAY,
+                Action.MOVE_AROUND,
+            ])
+            substance_name = random.choice(ALL_SUBSTANCE_NAMES)
+        else:
+            move_mode = None
+            substance_name = random.choice(ALL_SUBSTANCE_NAMES)
+
         action = Action(
             type_=action_type,
-            power=random.uniform(0.1, 10.0),
-            substance_name=random.choice(ALL_SUBSTANCE_NAMES)
+            power=random.uniform(0.1, 2.0),
+            substance_name=substance_name,
+            move_mode=move_mode,
         )
 
         return Gene(
