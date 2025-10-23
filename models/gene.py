@@ -99,8 +99,7 @@ class Gene:
         action = Action(
             type_=action_type,
             power=random.uniform(0.1, 10.0),
-            substance_name=random.choice(ALL_SUBSTANCE_NAMES),
-            direction=(random.uniform(-1, 1), random.uniform(-1, 1))
+            substance_name=random.choice(ALL_SUBSTANCE_NAMES)
         )
 
         return Gene(

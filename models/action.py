@@ -19,12 +19,10 @@ class Action:
         :param type_: тип действия
         :param power: сила действия (энергия, объём, дальность)
         :param substance_name: имя вещества (для EMIT/ABSORB)
-        :param direction: направление (dx, dy) для движения
         """
         self.type = type_
         self.power = power
         self.substance_name = substance_name
-        self.direction = direction or (0, 0)
 
     def execute(self, cell: 'Cell', environment: "Environment"):
         """Выполняет действие"""
@@ -40,7 +38,7 @@ class Action:
             cell.absorb(substance)
 
         elif self.type == Action.MOVE:
-           cell.move(*self.direction)
+            pass
 
         elif self.type == Action.HEALS:
            cell.heals()
@@ -52,8 +50,6 @@ class Action:
         info = [f"type={self.type}", f"power={self.power:.2f}"]
         if self.substance_name:
             info.append(f"substance={self.substance_name}")
-        if self.direction != (0, 0):
-            info.append(f"dir={self.direction}")
         return f"Action({', '.join(info)})"
 
     def to_dict(self):
@@ -61,7 +57,6 @@ class Action:
             "type": self.type,
             "power": self.power,
             "substance_name": self.substance_name,
-            "direction": self.direction,
         }
 
     @classmethod
@@ -70,6 +65,5 @@ class Action:
             type_=data["type"],
             power=data.get("power", 1.0),
             substance_name=data.get("substance_name"),
-            direction=tuple(data.get("direction", (0, 0)))
         )
 

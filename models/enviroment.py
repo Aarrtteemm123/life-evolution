@@ -23,8 +23,6 @@ class Environment:
 
     def update(self):
         """Обновляет вещества и клетки среды."""
-        self.grid.diffuse()
-
         for cell in self.cells:
             if cell.alive:
                 cell.update(self)
