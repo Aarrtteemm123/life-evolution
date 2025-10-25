@@ -50,11 +50,11 @@ class Action:
             self._execute_move(cell, environment)
 
         elif self.type == Action.HEALS:
-           cell.heals()
+           cell.heals(self.power)
 
     def _execute_move(self, cell: 'Cell', environment: "Environment"):
         """Обработка различных режимов движения."""
-        x, y = int(cell.position[0]), int(cell.position[1])
+        x, y = cell.get_int_position()
         dx, dy = 0.0, 0.0
 
         if self.move_mode == Action.MOVE_RANDOM or not self.substance_name:

@@ -58,7 +58,7 @@ class Cell:
         Наносит урон клетке, если она находится на ячейке с токсинами.
         Урон пропорционален энергии и концентрации токсина.
         """
-        cx, cy = int(self.position[0]), int(self.position[1])
+        cx, cy = self.get_int_position()
         local_subs = environment.grid.get_substances(cx, cy)
 
         if not local_subs:
@@ -75,7 +75,7 @@ class Cell:
 
         if total_damage > 0:
             # наносим урон здоровью
-            self.health -= total_damage * 0.5
+            self.health -= total_damage
             if self.health < 0:
                 self.health = 0
 
@@ -115,7 +115,7 @@ class Cell:
         )
 
         # координата клетки
-        cx, cy = int(self.position[0]), int(self.position[1])
+        cx, cy = self.get_int_position()
 
         # распределение вещества на все 8 направлений + центр
         directions = [
@@ -172,7 +172,7 @@ class Cell:
         """Прекращает жизнь клетки и выделяет вещества в окружающую среду."""
 
         self.alive = False
-        cx, cy = int(self.position[0]), int(self.position[1])
+        cx, cy = self.get_int_position()
         total_cell_energy = self.energy + self.health
 
         # === 2. Конвертировать энергию в органику ===
@@ -200,11 +200,18 @@ class Cell:
         self.energy = 0
         self.health = 0
 
-    def heals(self):
-        if self.energy < 1 or self.health > 100:
+    def heals(self, amount: float = 1):
+        if amount < 1:
+            amount = 1
+
+        if self.energy < amount + 5 or self.health > 100:
             return
-        self.energy -= 1
-        self.health += 1
+
+        self.energy -= amount
+        self.health += amount
+
+        if self.health > 100:
+            self.health = 100
 
     def is_alive(self) -> bool:
         return self.alive
@@ -221,6 +228,10 @@ class Cell:
             "age": self.age,
             "genes": [g.to_dict() for g in self.genes],
         }
+
+    def get_int_position(self):
+        cx, cy = int(self.position[0]), int(self.position[1])
+        return cx, cy
 
     @classmethod
     def from_dict(cls, data):
