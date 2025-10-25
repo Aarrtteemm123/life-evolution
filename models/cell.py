@@ -54,7 +54,30 @@ class Cell:
             self.die(environment)
 
     def apply_toxin_damage(self, environment: "Environment"):
-        pass
+        """
+        Наносит урон клетке, если она находится на ячейке с токсинами.
+        Урон пропорционален энергии и концентрации токсина.
+        """
+        cx, cy = int(self.position[0]), int(self.position[1])
+        local_subs = environment.grid.get_substances(cx, cy)
+
+        if not local_subs:
+            return
+
+        total_damage = 0.0
+
+        for sub in local_subs:
+            if sub.type == Substance.TOXIN and sub.concentration > 0.01:
+                # Урон = концентрация × энергия токсина
+                # Чем сильнее токсин, тем больше энергия
+                damage = sub.energy * sub.concentration
+                total_damage += damage
+
+        if total_damage > 0:
+            # наносим урон здоровью
+            self.health -= total_damage * 0.5
+            if self.health < 0:
+                self.health = 0
 
     def absorb(self, substance: Substance):
         """Поглощает вещество"""

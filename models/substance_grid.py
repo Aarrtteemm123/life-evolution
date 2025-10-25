@@ -33,7 +33,7 @@ class SubstanceGrid:
                 del self.grid[pos]
 
 
-    def get_cell(self, x: int, y: int) -> List[Substance]:
+    def get_substances(self, x: int, y: int) -> List[Substance]:
         """Возвращает список веществ в ячейке (может быть пустым)."""
         return self.grid.get((x, y), [])
 
