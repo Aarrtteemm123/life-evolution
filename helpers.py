@@ -33,57 +33,6 @@ def random_substance() -> Substance:
     return Substance(data["name"], category, concentration, data["energy"])
 
 
-
-def random_gene(all_substance_names: list[str]) -> Gene:
-    """
-    Создаёт случайный ген.
-    Рецептор реагирует либо на 'energy', либо на конкретное вещество из среды.
-    """
-
-    # --- Рецептор ---
-    # 80% генов реагируют на вещества, 20% — на внутреннюю энергию клетки
-    if random.random() < 0.8 and all_substance_names:
-        receptor = random.choice(all_substance_names)
-    else:
-        receptor = "energy"
-
-    threshold = random.uniform(0.1, 10.0)
-    mode = random.choice([Trigger.LESS, Trigger.GREATER])
-    trigger = Trigger(threshold, mode)
-
-    # --- Действие ---
-    action_type = random.choice([
-        Action.DIVIDE, Action.EMIT, Action.ABSORB,
-        Action.MOVE, Action.HEALS
-    ])
-
-    move_mode = None
-    if action_type == Action.MOVE:
-        move_mode = random.choice([
-            Action.MOVE_RANDOM,
-            Action.MOVE_TOWARD,
-            Action.MOVE_AWAY,
-            Action.MOVE_AROUND,
-        ])
-
-    # если действие связано с веществами — выберем из списка
-    substance_name = None
-    if action_type in (Action.EMIT, Action.ABSORB, Action.MOVE):
-        substance_name = random.choice(all_substance_names) if all_substance_names else "ORGANIC_0"
-
-    action = Action(
-        type_=action_type,
-        power=random.uniform(0.1, 10.0),
-        substance_name=substance_name,
-        move_mode=move_mode
-    )
-
-    return Gene(
-        receptor=receptor,
-        trigger=trigger,
-        action=action
-    )
-
 def base_genes() -> list[Gene]:
     """Создаёт набор базовых генов для ускорения эволюции."""
     genes = []
@@ -140,7 +89,8 @@ def random_cell(x: int, y: int, include_base_genes=INCLUDE_BASE_GENES) -> Cell:
     )[0]
 
     for _ in range(gene_count):
-        cell.genes.append(random_gene(ALL_SUBSTANCE_NAMES))
+        random_gene = Gene.create_random_gene()
+        cell.genes.append(random_gene)
 
     return cell
 

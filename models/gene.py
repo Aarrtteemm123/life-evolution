@@ -94,8 +94,12 @@ class Gene:
     @classmethod
     def create_random_gene(cls) -> 'Gene':
         """Создаёт случайный ген."""
-        all_receptors = ALL_SUBSTANCE_NAMES + ["energy", "health", "age"]
-        receptor = random.choice(all_receptors)
+        # 85% генов реагируют на вещества, 15% — на внутреннюю энергию клетки
+        if random.random() < 0.85:
+            receptor = random.choice(ALL_SUBSTANCE_NAMES)
+        else:
+            receptor = random.choice(["energy", "health", "age"])
+
         threshold = random.uniform(0.1, 10.0)
         mode = random.choice((Trigger.LESS, Trigger.GREATER))
         trigger = Trigger(threshold, mode)
