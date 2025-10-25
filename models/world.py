@@ -1,24 +1,30 @@
 import json
+import time
+
 from models.enviroment import Environment
 
 
 class World:
     """Мир симуляции: управляет временем и средой."""
-    def __init__(self, width: int, height: int, tick: int = 0):
+    def __init__(self, width: int, height: int, tick: int = 0, tick_time_ms: float = 0.0):
         self.env = Environment(width, height)
         self.tick: int = tick
+        self.tick_time_ms = 0.0
 
     def update(self):
+        start_time = time.perf_counter()
         self.tick += 1
         self.env.update_cells()
-        self.env.update_env_stats()
         self.env.update_sub_grid()
+        self.env.update_env_stats()
+        self.tick_time_ms = (time.perf_counter() - start_time) * 1000
 
     def to_dict(self):
         """Сериализация мира"""
         from config import SUBSTANCES
         return {
             "tick": self.tick,
+            "tick_time_ms": self.tick_time_ms,
             "environment": self.env.to_dict(),
             "substances": SUBSTANCES
         }
@@ -32,7 +38,12 @@ class World:
         SUBSTANCES = data.get("substances", {})
 
         # создаём сам мир и окружение
-        world = cls(grid_data["width"], grid_data["height"], data.get("tick", 0))
+        world = cls(
+            grid_data["width"],
+            grid_data["height"],
+            data.get("tick", 0),
+            data.get("tick_time_ms", 0)
+        )
         world.env = Environment.from_dict(env_data)
 
         return world

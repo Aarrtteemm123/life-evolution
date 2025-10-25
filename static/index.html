@@ -126,9 +126,13 @@
       const cellsCount = env.cells ? env.cells.length : 0;
       const subsCount = env.grid?.substances?.length || 0;
       const { width, height } = env.grid;
+      const tickTime = data.tick_time_ms ? data.tick_time_ms.toFixed(3) : 0;
+      const tickPerSec = tickTime ? (1000/tickTime).toFixed(1) : 0;
 
       statsBox.innerHTML = `
         <b>Tick:</b> ${data.tick}<br>
+        <b>Тиков/сек:</b> ${tickPerSec}<br>
+        <b>Время тика:</b> ${tickTime} мс<br>
         <b>Клетки:</b> ${stats.cells_total}<br>
         <b>Средняя энергия:</b> ${stats.avg_energy.toFixed(2)}<br>
         <b>Среднее здоровье:</b> ${stats.avg_health.toFixed(2)}<br>
