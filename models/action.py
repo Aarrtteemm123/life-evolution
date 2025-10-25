@@ -65,11 +65,13 @@ class Action:
             # ищем концентрацию вокруг клетки
             best_dir = None
             best_value = None
+            vision_radius = 3
 
             directions = [
-                (-1, -1), (-1, 0), (-1, 1),
-                (0, -1), (0, 1),
-                (1, -1), (1, 0), (1, 1)
+                (ix, iy)
+                for ix in range(-vision_radius, vision_radius + 1)
+                for iy in range(-vision_radius, vision_radius + 1)
+                if not (ix == 0 and iy == 0)
             ]
 
             for (ix, iy) in directions:
