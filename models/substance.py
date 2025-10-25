@@ -1,4 +1,4 @@
-from config import ORGANIC_TYPES, TOXIN_TYPES, INORGANIC_TYPES
+from config import SUBSTANCES
 
 
 class Substance:
@@ -30,25 +30,9 @@ class Substance:
         return self.concentration > 0
 
     @staticmethod
-    def find_substance(name: str) -> tuple[str, dict] | None:
-        found = None
-        for group, type_list in [
-            (Substance.ORGANIC, ORGANIC_TYPES),
-            (Substance.TOXIN, TOXIN_TYPES),
-            (Substance.INORGANIC, INORGANIC_TYPES),
-        ]:
-            for entry in type_list:
-                if entry["name"] == name:
-                    found = (group, entry)
-                    break
-            if found:
-                break
-
-        if not found:
-            return None
-
-        sub_type, data = found
-        return sub_type, data
+    def find_substance(name: str):
+        data = SUBSTANCES[name]
+        return data
 
     def clone(self) -> 'Substance':
         """Создаёт копию вещества"""

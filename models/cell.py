@@ -64,7 +64,7 @@ class Cell:
         if self.energy <= 0.001 or amount <= 0.001:
             return
 
-        sub_type, data = Substance.find_substance(substance_name)
+        data = Substance.find_substance(substance_name)
 
         # === Энергозатраты ===
         energy_cost = amount * data["energy"]  # стоимость пропорциональна энергетике вещества
@@ -78,7 +78,7 @@ class Cell:
         # создаём вещество, которое будет распределено вокруг
         emitted_total = Substance(
             name=substance_name,
-            type_=sub_type,
+            type_=data["type"],
             concentration=amount,
             energy=data["energy"],
         )
@@ -104,7 +104,7 @@ class Cell:
                 x, y,
                 Substance(
                     name=substance_name,
-                    type_=sub_type,
+                    type_=data["type"],
                     concentration=spread_concentration,
                     energy=data["energy"],
                 )

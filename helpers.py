@@ -3,7 +3,7 @@ import random
 import time
 
 from config import CELL_COUNT, WORLD_WIDTH, WORLD_HEIGHT, SIMULATION_STEPS, SAVES_DIR, \
-    ORGANIC_TYPES, TOXIN_TYPES, INORGANIC_TYPES, ALL_SUBSTANCE_NAMES, SUBSTANCE_DISTRIBUTION, INCLUDE_BASE_GENES
+    ORGANIC_TYPES, TOXIN_TYPES, INORGANIC_TYPES, SUBSTANCE_DISTRIBUTION, INCLUDE_BASE_GENES, SUBSTANCES
 from models.gene import Gene
 from models.trigger import Trigger
 from models.action import Action
@@ -11,26 +11,54 @@ from models.cell import Cell
 from models.substance import Substance
 from models.world import World
 
+def generate_substances(container: dict):
+    """
+    Генерирует глобальный словарь SUBSTANCES из всех категорий веществ.
+    Формат:
+        {
+            "ORGANIC_0": {"type": "ORGANIC", "energy": 1.5},
+            "TOXIN_2":   {"type": "TOXIN",   "energy": -4.0},
+            "INORGANIC_15": {"type": "INORGANIC", "energy": 0.5},
+            ...
+        }
+    """
+    container.clear()
+
+    # === Органика ===
+    for data in ORGANIC_TYPES:
+        container[data["name"]] = {
+            "type": Substance.ORGANIC,
+            "energy": data["energy"]
+        }
+
+    # === Токсины ===
+    for data in TOXIN_TYPES:
+        container[data["name"]] = {
+            "type": Substance.TOXIN,
+            "energy": data["energy"]
+        }
+
+    # === Неорганика ===
+    for data in INORGANIC_TYPES:
+        container[data["name"]] = {
+            "type": Substance.INORGANIC,
+            "energy": data["energy"]
+        }
 
 def random_substance() -> Substance:
-    """Создаёт случайное вещество, используя словарь распределения."""
-    # вычисляем суммарное количество (для нормализации вероятностей)
-    total = sum(SUBSTANCE_DISTRIBUTION.values())
-    categories = list(SUBSTANCE_DISTRIBUTION.keys())
-    weights = [SUBSTANCE_DISTRIBUTION[c] / total for c in categories]
+    """Создаёт случайное вещество на основе глобального словаря SUBSTANCES."""
+    name = random.choice(list(SUBSTANCES.keys()))
+    data = SUBSTANCES[name]
 
-    # случайно выбираем категорию с учётом её доли
-    category = random.choices(categories, weights=weights, k=1)[0]
+    # создаём случайную концентрацию в допустимых пределах
+    concentration = random.uniform(0.1, 10.0)
 
-    if category == Substance.ORGANIC:
-        data = random.choice(ORGANIC_TYPES)
-    elif category == Substance.TOXIN:
-        data = random.choice(TOXIN_TYPES)
-    else:
-        data = random.choice(INORGANIC_TYPES)
-
-    concentration = random.uniform(*data["concentration"])
-    return Substance(data["name"], category, concentration, data["energy"])
+    return Substance(
+        name=name,
+        type_=data["type"],
+        concentration=concentration,
+        energy=data["energy"]
+    )
 
 
 def base_genes() -> list[Gene]:
@@ -98,6 +126,7 @@ def random_cell(x: int, y: int, include_base_genes=INCLUDE_BASE_GENES) -> Cell:
 def populate_world(world: 'World'):
     """Заполняет мир веществами и клетками."""
     env = world.env
+    generate_substances(SUBSTANCES)
 
     # 1. Заполнение сетки веществ
     for _ in range(sum(SUBSTANCE_DISTRIBUTION.values())):

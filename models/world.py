@@ -16,9 +16,11 @@ class World:
 
     def to_dict(self):
         """Сериализация мира"""
+        from config import SUBSTANCES
         return {
             "tick": self.tick,
             "environment": self.env.to_dict(),
+            "substances": SUBSTANCES
         }
 
     @classmethod
@@ -26,6 +28,8 @@ class World:
         """Создаёт объект мира из словаря."""
         env_data = data.get("environment", {})
         grid_data = env_data.get("grid", {})
+        global SUBSTANCES
+        SUBSTANCES = data.get("substances", {})
 
         # создаём сам мир и окружение
         world = cls(grid_data["width"], grid_data["height"], data.get("tick", 0))

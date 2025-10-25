@@ -39,3 +39,5 @@ ALL_SUBSTANCE_NAMES = [
     "TOXIN_0", "TOXIN_1", "TOXIN_2", "TOXIN_3", "TOXIN_4",
     *[f"INORGANIC_{i}" for i in range(0, SUBSTANCE_DISTRIBUTION.get("INORGANIC"))]
 ]
+
+SUBSTANCES = {}
