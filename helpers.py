@@ -3,7 +3,7 @@ import random
 import time
 
 from config import CELL_COUNT, WORLD_WIDTH, WORLD_HEIGHT, SIMULATION_STEPS, SAVES_DIR, \
-    ORGANIC_TYPES, TOXIN_TYPES, INORGANIC_TYPES, ALL_SUBSTANCE_NAMES, SUBSTANCE_DISTRIBUTION
+    ORGANIC_TYPES, TOXIN_TYPES, INORGANIC_TYPES, ALL_SUBSTANCE_NAMES, SUBSTANCE_DISTRIBUTION, INCLUDE_BASE_GENES
 from models.gene import Gene
 from models.trigger import Trigger
 from models.action import Action
@@ -84,8 +84,41 @@ def random_gene(all_substance_names: list[str]) -> Gene:
         action=action
     )
 
+def base_genes() -> list[Gene]:
+    """Создаёт набор базовых генов для ускорения эволюции."""
+    genes = []
 
-def random_cell(x: int, y: int) -> Cell:
+    # === 1. Двигаться к еде (органике) ===
+    # если рядом высокая концентрация органики — двигаться в ту сторону
+    for org_type in ORGANIC_TYPES:
+        move_to_food = Gene(
+            receptor=org_type.get('name'),
+            trigger=Trigger(threshold=0.1, mode=Trigger.GREATER),  # мало еды — искать
+            action=Action(type_=Action.MOVE_TOWARD, power=1.0),  # движение
+        )
+        genes.append(move_to_food)
+
+    # === 2. Поглощать еду ===
+    for org_type in ORGANIC_TYPES:
+        absorb_food = Gene(
+            receptor=org_type.get('name'),
+            trigger=Trigger(threshold=0.3, mode=Trigger.GREATER),
+            action=Action(type_=Action.ABSORB, substance_name=org_type.get('name')),
+        )
+        genes.append(absorb_food)
+
+    # === 3. Деление клетки при избытке энергии ===
+    divide_on_energy = Gene(
+        receptor="energy",
+        trigger=Trigger(threshold=90, mode=Trigger.GREATER),
+        action=Action(type_=Action.DIVIDE),
+    )
+    genes.append(divide_on_energy)
+
+    return genes
+
+
+def random_cell(x: int, y: int, include_base_genes=INCLUDE_BASE_GENES) -> Cell:
     """Создаёт клетку с случайным набором генов и начальными параметрами."""
     # Случайное смещение внутри клетки (чтобы не стояли ровно по сетке)
     cell = Cell(position=(x + random.random(), y + random.random()))
@@ -93,6 +126,11 @@ def random_cell(x: int, y: int) -> Cell:
     # Начальные параметры
     cell.energy = 100.0
     cell.health = 100.0
+
+    if include_base_genes:
+        # === Добавляем базовые гены ===
+        for g in base_genes():
+            cell.genes.append(g)
 
     # Количество генов: чаще 2–6, но иногда до 10
     gene_count = random.choices(

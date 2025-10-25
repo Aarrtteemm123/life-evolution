@@ -50,14 +50,26 @@ class Cell:
 
     def absorb(self, substance: Substance):
         """Поглощает вещество"""
-        if not substance:
+        if not substance or substance.concentration <= 0:
             return
+
+        # === 1. Если это органика — напрямую в энергию ===
+        if substance.type == Substance.ORGANIC:
+            gained_energy = substance.concentration * substance.energy
+            self.energy += gained_energy
+
+            # вещество исчезает из среды
+            substance.concentration = 0
+            return
+
+        # === 2. Если это неорганика или токсины — храним внутри клетки ===
         existing = self.substances.get(substance.name)
         if existing:
             existing.concentration += substance.concentration
         else:
             self.substances[substance.name] = substance.clone()
 
+        # удаляем вещество из среды
         substance.concentration = 0
 
     def emit(self, substance_name: str, amount: float, environment: "Environment"):
