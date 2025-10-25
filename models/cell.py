@@ -1,6 +1,6 @@
 import math
 import random
-from typing import List, Dict
+from typing import List
 
 from config import ORGANIC_TYPES
 from models.gene import Gene
@@ -13,17 +13,24 @@ class Cell:
     Хранит гены, вещества, энергию, здоровье и позицию.
     """
 
-    def __init__(self, position=(0, 0)):
+    def __init__(
+        self,
+        position: tuple = (0.0, 0.0),
+        energy: float = 100.0,
+        health: float = 100.0,
+        age: int = 0,
+        alive: bool = True,
+        genes: List["Gene"] | None = None
+    ):
         # --- базовые параметры ---
         self.position = position
-        self.energy: float = 100.0
-        self.health: float = 100.0
-        self.age: int = 0
-        self.alive: bool = True
+        self.energy = energy
+        self.health = health
+        self.age = age
+        self.alive = alive
 
-        # --- внутреннее содержимое ---
-        self.genes: List[Gene] = []
-        self.substances: Dict[str, Substance] = {}  # вещества внутри клетки
+        # --- генетическая информация ---
+        self.genes: List[Gene] = genes or []
 
     def update(self, environment: "Environment"):
         """
@@ -36,6 +43,8 @@ class Cell:
         self.age += 1
         self.energy -= 0.1  # базовое потребление
 
+        self.apply_toxin_damage(environment)
+
         # активация генов
         for gene in self.genes:
             gene.try_activate(self, environment)
@@ -44,9 +53,12 @@ class Cell:
         if self.energy <= 0.01 or self.health <= 0.01:
             self.die(environment)
 
+    def apply_toxin_damage(self, environment: "Environment"):
+        pass
+
     def absorb(self, substance: Substance):
         """Поглощает вещество"""
-        if not substance or substance.concentration <= 0:
+        if not substance or substance.concentration <= 0.01:
             return
 
         gained_energy = substance.concentration * substance.energy

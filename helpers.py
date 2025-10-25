@@ -105,10 +105,6 @@ def random_cell(x: int, y: int, include_base_genes=INCLUDE_BASE_GENES) -> Cell:
     # Случайное смещение внутри клетки (чтобы не стояли ровно по сетке)
     cell = Cell(position=(x + random.random(), y + random.random()))
 
-    # Начальные параметры
-    cell.energy = 100.0
-    cell.health = 100.0
-
     if include_base_genes:
         # === Добавляем базовые гены ===
         for g in base_genes():
