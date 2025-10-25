@@ -45,19 +45,24 @@ def generate_substances(container: dict):
             "energy": data["energy"]
         }
 
-def random_substance() -> Substance:
-    """Создаёт случайное вещество на основе глобального словаря SUBSTANCES."""
-    name = random.choice(list(SUBSTANCES.keys()))
-    data = SUBSTANCES[name]
+def random_substance(type_: str = None) -> Substance | None:
+    """Создаёт случайное вещество из SUBSTANCES (можно указать тип)."""
+    if type_:
+        candidates = [n for n, v in SUBSTANCES.items() if v["type"] == type_]
+        if not candidates:
+            return None
+        name = random.choice(candidates)
+    else:
+        name = random.choice(list(SUBSTANCES.keys()))
 
-    # создаём случайную концентрацию в допустимых пределах
+    data = SUBSTANCES[name]
     concentration = random.uniform(0.1, 10.0)
 
     return Substance(
         name=name,
         type_=data["type"],
         concentration=concentration,
-        energy=data["energy"]
+        energy=data["energy"],
     )
 
 
@@ -129,10 +134,11 @@ def populate_world(world: 'World'):
     generate_substances(SUBSTANCES)
 
     # 1. Заполнение сетки веществ
-    for _ in range(sum(SUBSTANCE_DISTRIBUTION.values())):
-        x = random.randint(0, env.grid.width - 1)
-        y = random.randint(0, env.grid.height - 1)
-        env.add_substance(x, y, random_substance())
+    for category, count in SUBSTANCE_DISTRIBUTION.items():
+        for _ in range(count):
+            x = random.randint(0, env.grid.width - 1)
+            y = random.randint(0, env.grid.height - 1)
+            env.add_substance(x, y, random_substance(category))
 
     # 2. Создание клеток
     for _ in range(CELL_COUNT):
