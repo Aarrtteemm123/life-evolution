@@ -11,7 +11,7 @@ SUBSTANCE_DISTRIBUTION = {
 SIMULATION_STEPS = 1000
 FPS = 60
 SAVES_DIR = "saves/"
-INCLUDE_BASE_GENES = False
+INCLUDE_BASE_GENES = True
 
 # === Органические вещества (питательные) ===
 ORGANIC_TYPES = [

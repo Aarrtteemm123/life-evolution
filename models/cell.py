@@ -36,16 +36,12 @@ class Cell:
         self.age += 1
         self.energy -= 0.1  # базовое потребление
 
-        if self.energy <= 0.01:
-            self.health -= 1
-            self.energy = 0
-
         # активация генов
         for gene in self.genes:
             gene.try_activate(self, environment)
 
         # смерть, если энергия или здоровье на нуле
-        if self.health <= 0.01:
+        if self.energy <= 0.01 or self.health <= 0.01:
             self.die(environment)
 
     def absorb(self, substance: Substance):
@@ -142,16 +138,17 @@ class Cell:
 
         self.alive = False
         cx, cy = int(self.position[0]), int(self.position[1])
+        total_cell_energy = self.energy + self.health
 
         # === 2. Конвертировать энергию в органику ===
-        if self.energy > 0:
+        if total_cell_energy > 0:
             # случайный тип органики из конфигурации
             org_data = random.choice(ORGANIC_TYPES)
             organic_name = org_data["name"]
             organic_energy = org_data["energy"]
 
             # расчёт концентрации по энергии
-            organic_concentration = self.energy / organic_energy
+            organic_concentration = total_cell_energy / organic_energy
 
             # создание органического вещества
             organic = Substance(
