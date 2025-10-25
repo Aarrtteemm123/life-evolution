@@ -56,7 +56,7 @@ def random_substance(type_: str = None) -> Substance | None:
         name = random.choice(list(SUBSTANCES.keys()))
 
     data = SUBSTANCES[name]
-    concentration = random.uniform(0.1, 10.0)
+    concentration = random.uniform(0.1, 100.0)
 
     return Substance(
         name=name,
