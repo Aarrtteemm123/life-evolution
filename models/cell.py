@@ -36,7 +36,7 @@ class Cell:
         self.age += 1
         self.energy -= 0.1  # базовое потребление
 
-        if self.energy <= 0:
+        if self.energy <= 0.01:
             self.health -= 1
             self.energy = 0
 
@@ -45,7 +45,7 @@ class Cell:
             gene.try_activate(self, environment)
 
         # смерть, если энергия или здоровье на нуле
-        if self.health <= 0:
+        if self.health <= 0.01:
             self.die(environment)
 
     def absorb(self, substance: Substance):
@@ -61,7 +61,7 @@ class Cell:
     def emit(self, substance_name: str, amount: float, environment: "Environment"):
         """Выделяет вещество равномерно во все 8 направлений вокруг клетки."""
 
-        if self.energy <= 0 or amount <= 0:
+        if self.energy <= 0.001 or amount <= 0.001:
             return
 
         sub_type, data = Substance.find_substance(substance_name)

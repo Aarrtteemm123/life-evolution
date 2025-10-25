@@ -23,16 +23,18 @@ class Environment:
         """Добавляет вещество в сетку."""
         self.grid.add_substance(x, y, substance)
 
-    def update(self):
-        """Обновляет вещества и клетки среды."""
+    def update_sub_grid(self):
         self.grid.update()
 
+    def update_env_stats(self):
+        self.env_stats.update(self)
+
+    def update_cells(self):
         for cell in self.cells:
             if cell.alive:
                 cell.update(self)
 
         self.cells = [c for c in self.cells if c.alive]
-        self.env_stats.update(self)
 
     def to_dict(self) -> dict:
         """Преобразует среду в сериализуемый словарь."""

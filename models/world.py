@@ -10,7 +10,9 @@ class World:
 
     def update(self):
         self.tick += 1
-        self.env.update()
+        self.env.update_cells()
+        self.env.update_env_stats()
+        self.env.update_sub_grid()
 
     def to_dict(self):
         """Сериализация мира"""

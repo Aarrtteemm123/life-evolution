@@ -94,7 +94,7 @@ class Gene:
     @classmethod
     def create_random_gene(cls) -> 'Gene':
         """Создаёт случайный ген."""
-        # 85% генов реагируют на вещества, 15% — на внутреннюю энергию клетки
+        # 85% генов реагируют на вещества, 15% — на внутренние параметры клетки
         if random.random() < 0.85:
             receptor = random.choice(ALL_SUBSTANCE_NAMES)
         else:

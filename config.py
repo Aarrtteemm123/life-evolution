@@ -8,10 +8,10 @@ SUBSTANCE_DISTRIBUTION = {
     "TOXIN": 100,       # количество токсинов
     "INORGANIC": 50    # количество неорганических соединений
 }
-SIMULATION_STEPS = 100
-FPS = 10
+SIMULATION_STEPS = 1000
+FPS = 60
 SAVES_DIR = "saves/"
-INCLUDE_BASE_GENES = True
+INCLUDE_BASE_GENES = False
 
 # === Органические вещества (питательные) ===
 ORGANIC_TYPES = [
