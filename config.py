@@ -6,8 +6,9 @@ CELL_COUNT = 100
 SUBSTANCE_DISTRIBUTION = {
     "ORGANIC": 500,     # количество органических веществ
     "TOXIN": 100,       # количество токсинов
-    "INORGANIC": 50    # количество неорганических соединений
+    "INORGANIC": 30    # количество неорганических соединений
 }
+UNIQUE_INORGANIC_COUNT = 50 # количество уникальных неорганических соединений
 SIMULATION_STEPS = 1000
 FPS = 60
 SAVES_DIR = "saves/"
@@ -25,19 +26,18 @@ TOXIN_TYPES = [
     {"name": "TOXIN_0", "energy": 1.0, "concentration": (0.1, 10.0)},  # слабый
     {"name": "TOXIN_1", "energy": 3.0, "concentration": (0.1, 10.0)},
     {"name": "TOXIN_2", "energy": 4.0, "concentration": (0.1, 10.0)},
-    {"name": "TOXIN_3", "energy": 5.0, "concentration": (0.1, 10.0)},
-    {"name": "TOXIN_4", "energy": 6.0, "concentration": (0.1, 10.0)},  # сильный
 ]
 
 INORGANIC_TYPES = [
     {"name": f"INORGANIC_{i}", "energy": 0.5, "concentration": (0.1, 10.0)}
-    for i in range(0, SUBSTANCE_DISTRIBUTION.get("INORGANIC"))
+    for i in range(0, UNIQUE_INORGANIC_COUNT)
 ]
 
+INORGANIC_COUNT = 50
 ALL_SUBSTANCE_NAMES = [
     "ORGANIC_0", "ORGANIC_1", "ORGANIC_2",
-    "TOXIN_0", "TOXIN_1", "TOXIN_2", "TOXIN_3", "TOXIN_4",
-    *[f"INORGANIC_{i}" for i in range(0, SUBSTANCE_DISTRIBUTION.get("INORGANIC"))]
+    "TOXIN_0", "TOXIN_1", "TOXIN_2",
+    *[f"INORGANIC_{i}" for i in range(0, INORGANIC_COUNT)]
 ]
 
 SUBSTANCES = {}
