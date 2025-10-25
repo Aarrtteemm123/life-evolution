@@ -76,7 +76,7 @@ def base_genes() -> list[Gene]:
         move_to_food = Gene(
             receptor=org_type.get('name'),
             trigger=Trigger(threshold=0.1, mode=Trigger.GREATER),  # мало еды — искать
-            action=Action(type_=Action.MOVE_TOWARD, power=1.0),  # движение
+            action=Action(type_=Action.MOVE, power=1.0, move_mode=Action.MOVE_TOWARD),  # движение
         )
         genes.append(move_to_food)
 
