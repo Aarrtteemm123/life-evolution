@@ -53,50 +53,34 @@ class Cell:
         if not substance or substance.concentration <= 0:
             return
 
-        # === 1. Если это органика — напрямую в энергию ===
-        if substance.type == Substance.ORGANIC:
-            gained_energy = substance.concentration * substance.energy
-            self.energy += gained_energy
-
-            # вещество исчезает из среды
-            substance.concentration = 0
-            return
-
-        # === 2. Если это неорганика или токсины — храним внутри клетки ===
-        existing = self.substances.get(substance.name)
-        if existing:
-            existing.concentration += substance.concentration
-        else:
-            self.substances[substance.name] = substance.clone()
-
-        # удаляем вещество из среды
+        gained_energy = substance.concentration * substance.energy
+        self.energy += gained_energy
+        # вещество исчезает из среды
         substance.concentration = 0
 
     def emit(self, substance_name: str, amount: float, environment: "Environment"):
         """Выделяет вещество равномерно во все 8 направлений вокруг клетки."""
-        sub = self.substances.get(substance_name)
-        if not sub:
+
+        if self.energy <= 0 or amount <= 0:
             return
 
-        # ограничиваем количество выделяемого вещества
-        if sub.concentration < amount:
-            amount = sub.concentration
+        sub_type, data = Substance.find_substance(substance_name)
 
-        # проверяем энергию клетки
-        total_energy_cost = amount * sub.energy
-        if total_energy_cost > self.energy:
-            amount = self.energy / sub.energy if sub.energy > 0 else 0
+        # === Энергозатраты ===
+        energy_cost = amount * data["energy"]  # стоимость пропорциональна энергетике вещества
+        if self.energy < energy_cost:
+            # уменьшаем объём выделения, если энергии не хватает
+            amount = self.energy / data["energy"]
+            energy_cost = amount * data["energy"]
 
-        # уменьшаем энергию и концентрацию внутри клетки
-        self.energy -= amount * sub.energy
-        sub.concentration -= amount
+        self.energy -= energy_cost
 
         # создаём вещество, которое будет распределено вокруг
         emitted_total = Substance(
-            name=sub.name,
-            type_=sub.type,
+            name=substance_name,
+            type_=sub_type,
             concentration=amount,
-            energy=sub.energy,
+            energy=data["energy"],
         )
 
         # координата клетки
@@ -119,10 +103,10 @@ class Cell:
             environment.add_substance(
                 x, y,
                 Substance(
-                    name=sub.name,
-                    type_=sub.type,
+                    name=substance_name,
+                    type_=sub_type,
                     concentration=spread_concentration,
-                    energy=sub.energy,
+                    energy=data["energy"],
                 )
             )
 
@@ -159,12 +143,6 @@ class Cell:
         self.alive = False
         cx, cy = int(self.position[0]), int(self.position[1])
 
-        # === 1. Выбросить все внутренние вещества в среду ===
-        for sub in self.substances.values():
-            if sub.concentration <= 0:
-                continue
-            environment.add_substance(cx, cy, sub.clone())
-
         # === 2. Конвертировать энергию в органику ===
         if self.energy > 0:
             # случайный тип органики из конфигурации
@@ -189,8 +167,6 @@ class Cell:
         # === 3. Очистка и обнуление клетки ===
         self.energy = 0
         self.health = 0
-        self.substances.clear()
-        self.substances = []
 
     def heals(self):
         if self.energy < 1 or self.health > 100:
@@ -212,7 +188,6 @@ class Cell:
             "health": self.health,
             "age": self.age,
             "genes": [g.to_dict() for g in self.genes],
-            "substances": [s.to_dict() for s in self.substances.values()]
         }
 
     @classmethod
@@ -222,11 +197,10 @@ class Cell:
         cell.health = data["health"]
         cell.age = data["age"]
         cell.genes = [Gene.from_dict(g) for g in data.get("genes", [])]
-        cell.substances = {s["name"]: Substance.from_dict(s) for s in data.get("substances", [])}
         return cell
 
     def __repr__(self):
         return (
             f"Cell(pos={self.position}, E={self.energy:.2f}, H={self.health:.2f}, "
-            f"genes={len(self.genes)}, subs={len(self.substances)}, age={self.age})"
+            f"genes={len(self.genes)}, age={self.age})"
         )
