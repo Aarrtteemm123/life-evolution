@@ -20,13 +20,13 @@ ORGANIC_TYPES = [
     {"name": "ORGANIC_2", "energy": 5.0, "concentration": (0.1, 10.0)},
 ]
 
-# === Токсины (наносят вред, отрицательная энергия) ===
+# === Токсины (наносят вред) ===
 TOXIN_TYPES = [
-    {"name": "TOXIN_0", "energy": -1.0, "concentration": (0.1, 10.0)},  # слабый
-    {"name": "TOXIN_1", "energy": -3.0, "concentration": (0.1, 10.0)},
-    {"name": "TOXIN_2", "energy": -4.0, "concentration": (0.1, 10.0)},
-    {"name": "TOXIN_3", "energy": -5.0, "concentration": (0.1, 10.0)},
-    {"name": "TOXIN_4", "energy": -6.0, "concentration": (0.1, 10.0)},  # сильный
+    {"name": "TOXIN_0", "energy": 1.0, "concentration": (0.1, 10.0)},  # слабый
+    {"name": "TOXIN_1", "energy": 3.0, "concentration": (0.1, 10.0)},
+    {"name": "TOXIN_2", "energy": 4.0, "concentration": (0.1, 10.0)},
+    {"name": "TOXIN_3", "energy": 5.0, "concentration": (0.1, 10.0)},
+    {"name": "TOXIN_4", "energy": 6.0, "concentration": (0.1, 10.0)},  # сильный
 ]
 
 INORGANIC_TYPES = [
