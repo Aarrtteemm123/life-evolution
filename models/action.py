@@ -36,7 +36,9 @@ class Action:
     def execute(self, cell: 'Cell', environment: "Environment"):
         """Выполняет действие"""
         if self.type == Action.DIVIDE:
-           cell.divide()
+           new_cell = cell.divide()
+           if new_cell:
+               environment.add_cell_to_buffer(new_cell)
 
         elif self.type == Action.EMIT and self.substance_name:
             cell.emit(self.substance_name, self.power, environment)
@@ -94,8 +96,8 @@ class Action:
         # нормализация скорости
         length = math.hypot(dx, dy)
         if length > 0:
-            dx = (dx / length) * self.power
-            dy = (dy / length) * self.power
+            dx = (dx / length) * self.power * 0.1
+            dy = (dy / length) * self.power * 0.1
 
         cell.move(dx, dy)
 

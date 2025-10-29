@@ -141,7 +141,7 @@ def populate_world(world: 'World'):
         x = random.randint(0, env.grid.width - 1)
         y = random.randint(0, env.grid.height - 1)
         cell = random_cell(x, y)
-        env.add_cell(cell)
+        env.add_cell_to_buffer(cell)
 
 
 def run_simulation():

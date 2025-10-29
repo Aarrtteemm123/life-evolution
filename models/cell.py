@@ -146,12 +146,15 @@ class Cell:
         self.position = (self.position[0] + dx, self.position[1] + dy)
         self.energy -= 0.1 * math.hypot(dx, dy)
 
-    def divide(self) -> 'Cell':
+    def divide(self):
         """Создает копию клетки с возможной мутацией."""
+        if self.energy < 0.1:
+            return None
         new_cell = self.clone()
+        cell_energy = self.energy / 2
         new_cell.age = 0
-        self.energy /= 2
-        new_cell.energy /= 2
+        self.energy = cell_energy
+        new_cell.energy = cell_energy
         new_cell.position = (
             self.position[0] + random.choice((0.5, -0.5)),
             self.position[1] + random.choice((0.5, -0.5))

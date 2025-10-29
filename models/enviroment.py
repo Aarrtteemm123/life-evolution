@@ -9,10 +9,15 @@ class Environment:
     def __init__(self, width: int, height: int):
         self.grid = SubstanceGrid(width, height)
         self.cells: List[Cell] = []
+        self.buffer_cells: List[Cell] = []
         self.env_stats = EnvStats()
 
-    def add_cell(self, cell: Cell):
-        self.cells.append(cell)
+    def add_cell_to_buffer(self, cell: Cell):
+        self.buffer_cells.append(cell)
+
+    def load_from_buffer(self):
+        self.cells.extend(self.buffer_cells)
+        self.buffer_cells = []
 
     def remove_cell(self, cell: Cell):
         """Удаляет мёртвую клетку из мира."""
@@ -34,6 +39,7 @@ class Environment:
             if cell.alive:
                 cell.update(self)
 
+        self.load_from_buffer()
         self.cells = [c for c in self.cells if c.alive]
 
     def to_dict(self) -> dict:
