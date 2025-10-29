@@ -53,8 +53,6 @@ class Gene:
             return
 
         if self.trigger.check(value):
-            if self.receptor == "energy":
-                print(self.trigger.check(value), value, self.trigger)
             self.action.execute(cell, environment)
 
 
@@ -67,7 +65,7 @@ class Gene:
             self.active = not self.active
 
         if self.is_triggered_mutation():
-            if self.receptor == "energy":
+            if self.receptor in ("energy", "health"):
                 self.trigger.threshold = random.uniform(1, 100.0)
             else:
                 self.trigger.threshold = random.uniform(0.1, 10.0)
@@ -105,7 +103,7 @@ class Gene:
         else:
             receptor = random.choice(["energy", "health", "age"])
 
-        if receptor == "energy":
+        if receptor in ("energy", "health"):
             threshold = random.uniform(1, 100.0)
         else:
             threshold = random.uniform(0.1, 10.0)
