@@ -33,11 +33,10 @@ INORGANIC_TYPES = [
     for i in range(0, UNIQUE_INORGANIC_COUNT)
 ]
 
-INORGANIC_COUNT = 50
 ALL_SUBSTANCE_NAMES = [
     "ORGANIC_0", "ORGANIC_1", "ORGANIC_2",
     "TOXIN_0", "TOXIN_1", "TOXIN_2",
-    *[f"INORGANIC_{i}" for i in range(0, INORGANIC_COUNT)]
+    *[f"INORGANIC_{i}" for i in range(0, UNIQUE_INORGANIC_COUNT)]
 ]
 
 SUBSTANCES = {}
