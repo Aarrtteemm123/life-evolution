@@ -141,9 +141,24 @@ class Cell:
                 )
             )
 
-    def move(self, dx: float, dy: float):
-        """Перемещение клетки (упрощенно)."""
-        self.position = (self.position[0] + dx, self.position[1] + dy)
+    def move(self, dx: float, dy: float, environment: "Environment"):
+        """Перемещение клетки с ограничением в пределах мира."""
+        new_x = self.position[0] + dx
+        new_y = self.position[1] + dy
+
+        # клэмп по границам сетки
+        max_x = environment.grid.width - 0.5
+        max_y = environment.grid.height - 0.5
+        if new_x < 0:
+            new_x = 0.0
+        elif new_x > max_x:
+            new_x = max_x
+        if new_y < 0:
+            new_y = 0.0
+        elif new_y > max_y:
+            new_y = max_y
+
+        self.position = (new_x, new_y)
         self.energy -= 0.1 * math.hypot(dx, dy)
 
     def divide(self):

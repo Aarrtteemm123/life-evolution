@@ -12,7 +12,7 @@ UNIQUE_INORGANIC_COUNT = 50 # количество уникальных неор
 SIMULATION_STEPS = 1000
 FPS = 60
 SAVES_DIR = "saves/"
-INCLUDE_BASE_GENES = True
+INCLUDE_BASE_GENES = False
 
 # === Органические вещества (питательные) ===
 ORGANIC_TYPES = [

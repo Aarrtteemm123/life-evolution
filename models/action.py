@@ -44,7 +44,7 @@ class Action:
             cell.emit(self.substance_name, self.power, environment)
 
         elif self.type == Action.ABSORB and self.substance_name:
-            x, y = cell.position
+            x, y = cell.get_int_position()
             substance = environment.grid.get_substance(x, y, self.substance_name)
             cell.absorb(substance)
 
@@ -99,7 +99,7 @@ class Action:
             dx = (dx / length) * self.power * 0.1
             dy = (dy / length) * self.power * 0.1
 
-        cell.move(dx, dy)
+        cell.move(dx, dy, environment)
 
     def clone(self) -> 'Action':
         return Action.from_dict(self.to_dict())

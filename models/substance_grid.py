@@ -46,12 +46,15 @@ class SubstanceGrid:
                 if sub.concentration < 0.1:
                     continue
 
+                # используем исходную концентрацию для расчёта долей
+                original_concentration = sub.concentration
+
                 # часть концентрации остаётся на месте
-                main_part = sub.concentration * (1 - rate)
+                main_part = original_concentration * (1 - rate)
                 sub.concentration = main_part
 
-                # оставшаяся часть распределяется по соседям
-                spread = sub.concentration * rate / 4
+                # оставшаяся часть распределяется по соседям (равномерно на 4 стороны)
+                spread = (original_concentration * rate) / 4
                 for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
                     nx, ny = x + dx, y + dy
                     if not (0 <= nx < self.width and 0 <= ny < self.height):

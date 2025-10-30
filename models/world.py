@@ -1,7 +1,7 @@
 import json
 import time
 
-from models.enviroment import Environment
+from models.environment import Environment
 
 
 class World:
@@ -9,7 +9,7 @@ class World:
     def __init__(self, width: int, height: int, tick: int = 0, tick_time_ms: float = 0.0):
         self.env = Environment(width, height)
         self.tick: int = tick
-        self.tick_time_ms = 0.0
+        self.tick_time_ms = tick_time_ms
 
     def update(self):
         start_time = time.perf_counter()
