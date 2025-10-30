@@ -34,8 +34,13 @@ class World:
         """Создаёт объект мира из словаря."""
         env_data = data.get("environment", {})
         grid_data = env_data.get("grid", {})
-        global SUBSTANCES
-        SUBSTANCES = data.get("substances", {})
+        import config as _config
+        subs = data.get("substances")
+        if subs is not None:
+            _config.SUBSTANCES = subs
+        else:
+            from helpers import generate_substances
+            generate_substances(_config.SUBSTANCES)
 
         # создаём сам мир и окружение
         world = cls(
