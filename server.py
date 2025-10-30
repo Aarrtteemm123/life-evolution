@@ -4,7 +4,7 @@ from aiohttp import web
 import os
 import time
 
-from config import WORLD_WIDTH, WORLD_HEIGHT, FPS, FRAME_TIME
+from config import WORLD_WIDTH, WORLD_HEIGHT, FRAME_TIME
 from models.world import World
 from helpers import populate_world
 
