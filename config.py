@@ -11,6 +11,7 @@ SUBSTANCE_DISTRIBUTION = {
 UNIQUE_INORGANIC_COUNT = 50 # количество уникальных неорганических соединений
 SIMULATION_STEPS = 1000
 FPS = 60
+FRAME_TIME = 1 / FPS
 SAVES_DIR = "saves/"
 INCLUDE_BASE_GENES = False
 
