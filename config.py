@@ -17,6 +17,8 @@ FPS = 60
 FRAME_TIME = 1 / FPS
 SAVES_DIR = "saves/"
 INCLUDE_BASE_GENES = True
+# === вероятность появления органики в каждой ячейке за тик (0.001 = 0.1%) ===
+ORGANIC_SPAWN_PROBABILITY_PER_CELL_PER_TICK = 0.0001
 
 # === Органические вещества (питательные) ===
 ORGANIC_TYPES = [

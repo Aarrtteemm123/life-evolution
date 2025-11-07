@@ -1,9 +1,11 @@
 import math
+import random
 from typing import List
 from models.cell import Cell
 from models.env_stats import EnvStats
 from models.substance_grid import SubstanceGrid
-from config import CELL_RADIUS, CELL_REPULSION_FORCE
+from models.substance import Substance
+from config import CELL_RADIUS, CELL_REPULSION_FORCE, ORGANIC_TYPES, ORGANIC_SPAWN_PROBABILITY_PER_CELL_PER_TICK
 
 class Environment:
     """Среда мира: хранит вещества, клетки и API для взаимодействия."""
@@ -29,6 +31,26 @@ class Environment:
     def add_substance(self, x: int, y: int, substance):
         """Добавляет вещество в сетку."""
         self.grid.add_substance(x, y, substance)
+
+    def spawn_random_organic(self):
+        for x in range(self.grid.width):
+            for y in range(self.grid.height):
+                if random.random() < ORGANIC_SPAWN_PROBABILITY_PER_CELL_PER_TICK:
+                    # Выбираем случайный тип органики
+                    org_data = random.choice(ORGANIC_TYPES)
+                    organic_name = org_data["name"]
+                    organic_energy = org_data["energy"]
+                    
+                    # Создаём органическое вещество с концентрацией 1.0
+                    organic = Substance(
+                        name=organic_name,
+                        type_=Substance.ORGANIC,
+                        concentration=10.0,
+                        energy=organic_energy,
+                    )
+                    
+                    # Добавляем в ячейку
+                    self.add_substance(x, y, organic)
 
     def update_sub_grid(self):
         self.grid.update()
