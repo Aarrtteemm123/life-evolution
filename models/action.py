@@ -36,7 +36,7 @@ class Action:
     def execute(self, cell: 'Cell', environment: "Environment"):
         """Выполняет действие"""
         if self.type == Action.DIVIDE:
-           new_cell = cell.divide()
+           new_cell = cell.divide(environment)
            if new_cell:
                environment.add_cell_to_buffer(new_cell)
 

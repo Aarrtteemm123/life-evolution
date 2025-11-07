@@ -2,7 +2,7 @@ import math
 import random
 from typing import List
 
-from config import ORGANIC_TYPES
+from config import ORGANIC_TYPES, CELLS_LIMIT
 from models.gene import Gene
 from models.substance import Substance
 
@@ -161,9 +161,9 @@ class Cell:
         self.position = (new_x, new_y)
         self.energy -= 0.1 * math.hypot(dx, dy)
 
-    def divide(self):
+    def divide(self, environment: "Environment"):
         """Создает копию клетки с возможной мутацией."""
-        if self.energy < 0.1:
+        if self.energy < 0.1 or (len(environment.cells) + len(environment.buffer_cells) > CELLS_LIMIT):
             return None
         new_cell = self.clone()
         cell_energy = self.energy / 2

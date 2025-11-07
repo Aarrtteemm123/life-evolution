@@ -2,6 +2,7 @@
 WORLD_WIDTH = 100
 WORLD_HEIGHT = 100
 CELL_COUNT = 100
+CELLS_LIMIT = 1000
 # === Конфигурация распределения веществ ===
 SUBSTANCE_DISTRIBUTION = {
     "ORGANIC": 500,     # количество органических веществ
