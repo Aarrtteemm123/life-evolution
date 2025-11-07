@@ -4,7 +4,7 @@ from aiohttp import web
 import os
 import time
 
-from config import WORLD_WIDTH, WORLD_HEIGHT, FRAME_TIME
+from config import WORLD_WIDTH, WORLD_HEIGHT, FRAME_TIME, CELL_RADIUS
 from models.world import World
 from helpers import populate_world
 
@@ -67,6 +67,7 @@ def build_render_state(world: World) -> dict:
     return {
         "tick": world.tick,
         "tick_time_ms": world.tick_time_ms,
+        "cell_radius": CELL_RADIUS,
         "environment": {
             "grid": {
                 "width": env.grid.width,
