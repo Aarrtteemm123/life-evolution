@@ -2,7 +2,9 @@
 WORLD_WIDTH = 100
 WORLD_HEIGHT = 100
 CELL_COUNT = 100
-CELLS_LIMIT = 1000
+CELLS_LIMIT = 300
+CELL_RADIUS = 0.5  # радиус клетки для физики столкновений
+CELL_REPULSION_FORCE = 0.3  # сила отталкивания при столкновении
 # === Конфигурация распределения веществ ===
 SUBSTANCE_DISTRIBUTION = {
     "ORGANIC": 500,     # количество органических веществ
@@ -14,7 +16,7 @@ SIMULATION_STEPS = 1000
 FPS = 60
 FRAME_TIME = 1 / FPS
 SAVES_DIR = "saves/"
-INCLUDE_BASE_GENES = False
+INCLUDE_BASE_GENES = True
 
 # === Органические вещества (питательные) ===
 ORGANIC_TYPES = [

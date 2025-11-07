@@ -15,6 +15,7 @@ class World:
         start_time = time.perf_counter()
         self.tick += 1
         self.env.update_cells()
+        self.env.apply_physics()
         self.env.update_sub_grid()
         self.env.update_env_stats()
         self.tick_time_ms = (time.perf_counter() - start_time) * 1000
