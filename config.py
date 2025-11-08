@@ -4,7 +4,7 @@ WORLD_HEIGHT = 100
 CELL_COUNT = 100
 CELLS_LIMIT = 300
 CELL_RADIUS = 0.5  # радиус клетки для физики столкновений
-CELL_REPULSION_FORCE = 0.3  # сила отталкивания при столкновении
+CELL_REPULSION_FORCE = 0.6  # сила отталкивания при столкновении
 # === Конфигурация распределения веществ ===
 SUBSTANCE_DISTRIBUTION = {
     "ORGANIC": 500,     # количество органических веществ
@@ -19,6 +19,8 @@ SAVES_DIR = "saves/"
 INCLUDE_BASE_GENES = True
 # === вероятность появления органики в каждой ячейке за тик (0.001 = 0.1%) ===
 ORGANIC_SPAWN_PROBABILITY_PER_CELL_PER_TICK = 0.0001
+# === Конфигурация рассеивания веществ ===
+SUBSTANCE_DIFFUSION_RATE = 0.1  # скорость рассеивания (0.0 = отключено, 0.1 = 10% рассеивается в соседние ячейки)
 
 # === Органические вещества (питательные) ===
 ORGANIC_TYPES = [

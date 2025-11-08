@@ -12,7 +12,7 @@ class Substance:
         type_: str,
         concentration: float,
         energy: float,
-        volatility: float = 0.02
+        volatility: float = 0.01
     ):
         self.name = name
         self.type = type_

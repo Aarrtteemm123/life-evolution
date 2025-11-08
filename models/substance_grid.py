@@ -1,6 +1,7 @@
 from typing import Dict, List, Tuple
 
 from models.substance import Substance
+from config import SUBSTANCE_DIFFUSION_RATE
 
 
 class SubstanceGrid:
@@ -20,7 +21,9 @@ class SubstanceGrid:
 
     def update(self):
         """Обновляет вещества и удаляет неактивные (с нулевой концентрацией)."""
-        self.diffuse()
+        # Рассеивание происходит только если включено в конфигурации
+        if SUBSTANCE_DIFFUSION_RATE > 0:
+            self.diffuse()
         for pos in list(self.grid.keys()):
             new_subs = []
             for sub in self.grid[pos]:
@@ -34,16 +37,22 @@ class SubstanceGrid:
                 del self.grid[pos]
 
 
-    def diffuse(self, rate: float = 0.1):
+    def diffuse(self, rate: float = None):
         """
         Простое рассеивание веществ по соседним ячейкам.
-        (пока что грубое приближение, без физики)
+        Рассеивает вещества между соседними ячейками без потери общей концентрации.
         """
+        if rate is None:
+            rate = SUBSTANCE_DIFFUSION_RATE
+        
+        if rate <= 0:
+            return
+        
         new_grid: Dict[Tuple[int, int], List[Substance]] = {}
 
         for (x, y), subs in self.grid.items():
             for sub in subs:
-                if sub.concentration < 0.1:
+                if sub.concentration < 0.01:
                     continue
 
                 # используем исходную концентрацию для расчёта долей
@@ -51,20 +60,28 @@ class SubstanceGrid:
 
                 # часть концентрации остаётся на месте
                 main_part = original_concentration * (1 - rate)
-                sub.concentration = main_part
-
+                
                 # оставшаяся часть распределяется по соседям (равномерно на 4 стороны)
-                spread = (original_concentration * rate) / 4
+                spread_per_neighbor = (original_concentration * rate) / 4
+                neighbor_count = 0
+                
                 for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
                     nx, ny = x + dx, y + dy
-                    if not (0 <= nx < self.width and 0 <= ny < self.height):
-                        continue
-                    new_grid.setdefault((nx, ny), []).append(
-                        Substance(sub.name, sub.type, spread, sub.energy)
-                    )
+                    if 0 <= nx < self.width and 0 <= ny < self.height:
+                        neighbor_count += 1
+                        new_grid.setdefault((nx, ny), []).append(
+                            Substance(sub.name, sub.type, spread_per_neighbor, sub.energy, sub.volatility)
+                        )
 
-                # вернуть обновлённое вещество в текущую клетку
-                new_grid.setdefault((x, y), []).append(sub.clone())
+                # Если не все соседи доступны (на границе), оставшаяся часть возвращается в текущую ячейку
+                if neighbor_count < 4:
+                    main_part += spread_per_neighbor * (4 - neighbor_count)
+                
+                # вернуть основную часть вещества в текущую клетку
+                if main_part > 0.01:
+                    new_grid.setdefault((x, y), []).append(
+                        Substance(sub.name, sub.type, main_part, sub.energy, sub.volatility)
+                    )
 
         # слияние ячеек, чтобы объединить одинаковые вещества
         merged: Dict[Tuple[int, int], List[Substance]] = {}

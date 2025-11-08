@@ -41,7 +41,7 @@ class Environment:
                     organic_name = org_data["name"]
                     organic_energy = org_data["energy"]
                     
-                    # Создаём органическое вещество с концентрацией 1.0
+                    # Создаём органическое вещество с концентрацией 10.0 и volatility = 0 (не распадается)
                     organic = Substance(
                         name=organic_name,
                         type_=Substance.ORGANIC,
