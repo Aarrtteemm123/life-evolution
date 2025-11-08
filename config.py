@@ -1,17 +1,17 @@
 # === Константы симуляции ===
-WORLD_WIDTH = 100
-WORLD_HEIGHT = 100
-CELL_COUNT = 100
-CELLS_LIMIT = 300
+WORLD_WIDTH = 40
+WORLD_HEIGHT = 40
+CELL_COUNT = 10
+CELLS_LIMIT = 50
 CELL_RADIUS = 0.5  # радиус клетки для физики столкновений
-CELL_REPULSION_FORCE = 0.6  # сила отталкивания при столкновении
+CELL_REPULSION_FORCE = 1.5  # сила отталкивания при столкновении
 # === Конфигурация распределения веществ ===
 SUBSTANCE_DISTRIBUTION = {
     "ORGANIC": 500,     # количество органических веществ
-    "TOXIN": 100,       # количество токсинов
-    "INORGANIC": 30    # количество неорганических соединений
+    "TOXIN": 10,       # количество токсинов
+    "INORGANIC": 10    # количество неорганических соединений
 }
-UNIQUE_INORGANIC_COUNT = 50 # количество уникальных неорганических соединений
+UNIQUE_INORGANIC_COUNT = 10 # количество уникальных неорганических соединений
 SIMULATION_STEPS = 1000
 FPS = 60
 FRAME_TIME = 1 / FPS
