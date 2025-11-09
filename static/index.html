@@ -17,7 +17,7 @@
 
     /* Левая панель */
     #sidebar {
-      width: 260px;
+      width: 400px;
       background: #111;
       border-right: 2px solid #222;
       padding: 20px;
@@ -139,10 +139,17 @@
         <b>Средний возраст:</b> ${stats.avg_age.toFixed(1)}<br>
         <b>Среднее количество генов:</b> ${stats.avg_genes.toFixed(1)}<br>
         <hr>
-        <b>Всего веществ:</b> ${stats.substances_total}<br>
+        <b>Уникальных веществ:</b> ${stats.total_unique_substances}<br>
+
         <span style="color:#5DF53B">Органика:</span> ${stats.substances_by_type.ORGANIC}<br>
+        <span>Суммарная концентрация:</span> ${stats.substances_concentration_by_type.ORGANIC}<br>
+
         <span style="color:#3BCAF5">Неорганика:</span> ${stats.substances_by_type.INORGANIC}<br>
+        <span>Суммарная концентрация:</span> ${stats.substances_concentration_by_type.INORGANIC}<br>
+
         <span style="color:#F55B3B">Токсины:</span> ${stats.substances_by_type.TOXIN}<br>
+        <span>Суммарная концентрация:</span> ${stats.substances_concentration_by_type.TOXIN}<br>
+
         <hr>
         <b>Размер мира:</b> ${width}×${height}
       `;
