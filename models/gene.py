@@ -39,7 +39,7 @@ class Gene:
         value = None
 
         # --- 1. Попробуем получить значение вещества из среды ---
-        if self.receptor not in ("energy", "health", "age"):
+        if self.receptor not in ("energy", "health"):
             x, y = int(cell.position[0]), int(cell.position[1])
             substance = environment.grid.get_substance(x, y, self.receptor)
             if substance:
@@ -101,7 +101,7 @@ class Gene:
         if random.random() < 0.85:
             receptor = random.choice(ALL_SUBSTANCE_NAMES)
         else:
-            receptor = random.choice(["energy", "health", "age"])
+            receptor = random.choice(["energy", "health"])
 
         if receptor in ("energy", "health"):
             threshold = random.uniform(1, 100.0)

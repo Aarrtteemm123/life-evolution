@@ -56,6 +56,9 @@ class Action:
 
     def _execute_move(self, cell: 'Cell', environment: "Environment"):
         """Обработка различных режимов движения."""
+        if not self.move_mode:
+            return
+
         x, y = cell.get_int_position()
 
         if self.move_mode == Action.MOVE_RANDOM or not self.substance_name:
@@ -115,9 +118,8 @@ class Action:
 
             # Если не нашли подходящее направление (вещество везде одинаковое или отсутствует)
             if best_dir is None:
-                # Двигаемся случайно
-                dx = random.uniform(-1, 1)
-                dy = random.uniform(-1, 1)
+                dx = 0
+                dy = 0
             else:
                 dx, dy = best_dir
                 if self.move_mode == Action.MOVE_AROUND:
