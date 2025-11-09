@@ -12,6 +12,7 @@ class EnvStats:
         self.avg_health = 0.0
         self.avg_age = 0.0
         self.avg_genes = 0.0
+        self.avg_active_genes = 0.0
         self.total_unique_substances = 0
         self.total_substances_by_type: Dict[str, int] = {}
         self.total_substances_concentration_by_type: Dict[str, float] = {}
@@ -30,6 +31,9 @@ class EnvStats:
             self.avg_health = statistics.fmean(c.health for c in alive_cells)
             self.avg_age = statistics.fmean(c.age for c in alive_cells)
             self.avg_genes = statistics.fmean(len(c.genes) for c in alive_cells)
+            self.avg_active_genes = statistics.fmean(
+                sum(1 for g in c.genes if g.active) for c in alive_cells
+            )
         else:
             self.avg_energy = self.avg_health = self.avg_age = self.avg_genes = 0.0
 
@@ -69,6 +73,7 @@ class EnvStats:
         obj.avg_health = data.get("avg_health", 0.0)
         obj.avg_age = data.get("avg_age", 0.0)
         obj.avg_genes = data.get("avg_genes", 0.0)
+        obj.avg_active_genes = data.get("avg_active_genes", 0.0)
         obj.total_unique_substances = data.get("substances_total", 0)
         obj.total_substances_by_type = data.get(
             "substances_by_type", {}
@@ -85,6 +90,7 @@ class EnvStats:
             "avg_health": self.avg_health,
             "avg_age": self.avg_age,
             "avg_genes": self.avg_genes,
+            "avg_active_genes": self.avg_active_genes,
             "total_unique_substances": self.total_unique_substances,
             "substances_by_type": self.total_substances_by_type,
             "substances_concentration_by_type": self.total_substances_concentration_by_type,
@@ -95,6 +101,7 @@ class EnvStats:
             f"WorldStats(cells={self.cells_total}, "
             f"E={self.avg_energy:.2f}, H={self.avg_health:.2f}, "
             f"age={self.avg_age:.1f}, genes={self.avg_genes:.1f}, "
+            f"avg_active_genes={self.avg_active_genes:.1f}, "
             f"total_unique_substances={self.total_unique_substances}),"
             f"total_substances_by_type={self.total_substances_by_type}),"
             f"total_substances_concentration_by_type={self.total_substances_concentration_by_type}),"
