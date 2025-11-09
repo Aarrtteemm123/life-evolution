@@ -2,12 +2,15 @@ import statistics
 from collections import defaultdict
 from typing import Dict
 
+from config import CELLS_LIMIT
+
 
 class EnvStats:
     """Хранит и обновляет статистику по состоянию окружения."""
 
     def __init__(self):
         self.cells_total = 0
+        self.cells_limit = CELLS_LIMIT
         self.avg_energy = 0.0
         self.avg_health = 0.0
         self.avg_age = 0.0
@@ -69,6 +72,7 @@ class EnvStats:
         """Создаёт объект статистики из словаря (например, при загрузке мира)."""
         obj = cls()
         obj.cells_total = data.get("cells_total", 0)
+        obj.cells_limit = data.get("cells_limit", 0)
         obj.avg_energy = data.get("avg_energy", 0.0)
         obj.avg_health = data.get("avg_health", 0.0)
         obj.avg_age = data.get("avg_age", 0.0)
@@ -86,6 +90,7 @@ class EnvStats:
     def to_dict(self):
         return {
             "cells_total": self.cells_total,
+            "cells_limit": self.cells_limit,
             "avg_energy": self.avg_energy,
             "avg_health": self.avg_health,
             "avg_age": self.avg_age,
