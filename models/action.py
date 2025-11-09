@@ -57,18 +57,21 @@ class Action:
     def _execute_move(self, cell: 'Cell', environment: "Environment"):
         """Обработка различных режимов движения."""
         x, y = cell.get_int_position()
-        dx, dy = 0.0, 0.0
 
         if self.move_mode == Action.MOVE_RANDOM or not self.substance_name:
             dx = random.uniform(-1, 1)
             dy = random.uniform(-1, 1)
 
         else:
+            # получаем концентрацию в текущей позиции для сравнения
+            current_concentration = environment.grid.get_concentration(x, y, self.substance_name)
+            
             # ищем концентрацию вокруг клетки
             best_dir = None
             best_value = None
             vision_radius = 3
 
+            # Проверяем только соседние ячейки (в пределах vision_radius)
             directions = [
                 (ix, iy)
                 for ix in range(-vision_radius, vision_radius + 1)
@@ -78,19 +81,47 @@ class Action:
 
             for (ix, iy) in directions:
                 nx, ny = int(x) + ix, int(y) + iy
+                # Проверяем границы сетки
+                if not (0 <= nx < environment.grid.width and 0 <= ny < environment.grid.height):
+                    continue
+                    
                 val = environment.grid.get_concentration(nx, ny, self.substance_name)
-                if best_value is None or (
-                        self.move_mode == Action.MOVE_TOWARD and val > best_value
-                ) or (
-                        self.move_mode == Action.MOVE_AWAY and val < best_value
-                ):
-                    best_value = val
-                    best_dir = (ix, iy)
+                
+                # Для TOWARD: ищем направление с БОЛЬШЕЙ концентрацией, чем текущая
+                if self.move_mode == Action.MOVE_TOWARD:
+                    if val > current_concentration:
+                        if best_value is None or val > best_value:
+                            best_value = val
+                            best_dir = (ix, iy)
+                
+                # Для AWAY: ищем направление с МЕНЬШЕЙ концентрацией, чем текущая
+                elif self.move_mode == Action.MOVE_AWAY:
+                    # Если текущая концентрация = 0, ищем направление с минимальной концентрацией
+                    if current_concentration == 0:
+                        if best_value is None or val < best_value:
+                            best_value = val
+                            best_dir = (ix, iy)
+                    elif val < current_concentration:
+                        if best_value is None or val < best_value:
+                            best_value = val
+                            best_dir = (ix, iy)
+                
+                # Для AROUND: сначала находим направление к веществу (как TOWARD)
+                elif self.move_mode == Action.MOVE_AROUND:
+                    if val > current_concentration:
+                        if best_value is None or val > best_value:
+                            best_value = val
+                            best_dir = (ix, iy)
 
-            if best_dir:
+            # Если не нашли подходящее направление (вещество везде одинаковое или отсутствует)
+            if best_dir is None:
+                # Двигаемся случайно
+                dx = random.uniform(-1, 1)
+                dy = random.uniform(-1, 1)
+            else:
                 dx, dy = best_dir
                 if self.move_mode == Action.MOVE_AROUND:
-                    # поворот на 90° (перпендикуляр к градиенту)
+                    # поворот на 90° против часовой стрелки (перпендикуляр к градиенту)
                     dx, dy = -dy, dx
 
         # нормализация скорости
@@ -98,6 +129,9 @@ class Action:
         if length > 0:
             dx = (dx / length) * self.power * 0.1
             dy = (dy / length) * self.power * 0.1
+        else:
+            # Если длина 0, не двигаемся
+            return
 
         cell.move(dx, dy, environment)
 
