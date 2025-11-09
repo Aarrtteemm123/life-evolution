@@ -40,7 +40,7 @@ class Gene:
 
         # --- 1. Попробуем получить значение вещества из среды ---
         if self.receptor not in ("energy", "health"):
-            x, y = int(cell.position[0]), int(cell.position[1])
+            x, y = cell.get_int_position()
             substance = environment.grid.get_substance(x, y, self.receptor)
             if substance:
                 value = substance.concentration

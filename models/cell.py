@@ -2,7 +2,7 @@ import math
 import random
 from typing import List
 
-from config import ORGANIC_TYPES, CELLS_LIMIT
+from config import ORGANIC_TYPES, CELLS_LIMIT, CELL_RADIUS
 from models.gene import Gene
 from models.substance import Substance
 
@@ -147,16 +147,16 @@ class Cell:
         new_y = self.position[1] + dy
 
         # клэмп по границам сетки
-        max_x = environment.grid.width - 0.5
-        max_y = environment.grid.height - 0.5
+        max_x = environment.grid.width
+        max_y = environment.grid.height
         if new_x < 0:
-            new_x = 0.0
+            new_x = CELL_RADIUS
         elif new_x > max_x:
-            new_x = max_x
+            new_x = max_x - CELL_RADIUS
         if new_y < 0:
-            new_y = 0.0
+            new_y = CELL_RADIUS
         elif new_y > max_y:
-            new_y = max_y
+            new_y = max_y - CELL_RADIUS
 
         self.position = (new_x, new_y)
         self.energy -= 0.1 * math.hypot(dx, dy)
