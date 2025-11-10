@@ -86,7 +86,7 @@ class Gene:
             ])
 
         if self.is_triggered_mutation():
-            self.mutation_rate *= random.choice((1.1, 0.9))
+            self.mutation_rate *= random.choice((1.15, 0.85))
             self.mutation_rate = min(self.mutation_rate, 1.0)
 
         return None
