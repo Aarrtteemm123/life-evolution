@@ -75,20 +75,15 @@
   <!-- Боковое меню -->
   <div id="sidebar">
     <div>
-      <h2>🧬 Evolution</h2>
+      <h2>🕹️ Controls</h2>
       <div class="checkbox-group">
-        <label><input type="checkbox" id="toggle-organic" checked> Показать органику</label>
-        <label><input type="checkbox" id="toggle-inorganic" checked> Показать неорганику</label>
-        <label><input type="checkbox" id="toggle-toxin" checked> Показать токсины</label>
+        <label><input type="checkbox" id="toggle-organic" checked> Display organic</label>
+        <label><input type="checkbox" id="toggle-inorganic" checked> Display inorganic</label>
+        <label><input type="checkbox" id="toggle-toxin" checked> Display toxins</label>
       </div>
 
-      <h2>📊 Статистика</h2>
-      <div class="stats" id="stats">
-        tick: 0<br>
-        клетки: 0<br>
-        вещества: 0<br>
-        размер: 0×0
-      </div>
+      <h2>📊 World Stats</h2>
+      <div class="stats" id="stats"></div>
     </div>
 
     <footer>© 2025 Evolution Simulator</footer>
@@ -130,31 +125,47 @@
       const tickPerSec = tickTime ? (1000/tickTime).toFixed(1) : 0;
 
       statsBox.innerHTML = `
-        <b>Tick:</b> ${data.tick}<br>
-        <b>Тиков/сек:</b> ${tickPerSec}<br>
-        <b>Время тика:</b> ${tickTime} мс<br>
-        <b>Клетки:</b> ${stats.cells_total}<br>
-        <b>Лимит клеток:</b> ${stats.cells_limit}<br>
-        <b>Средняя энергия:</b> ${stats.avg_energy.toFixed(2)}<br>
-        <b>Среднее здоровье:</b> ${stats.avg_health.toFixed(2)}<br>
-        <b>Средний возраст:</b> ${stats.avg_age.toFixed(2)}<br>
-        <b>Среднее количество генов:</b> ${stats.avg_genes.toFixed(2)}<br>
-        <b>Среднее количество активных генов:</b> ${stats.avg_active_genes.toFixed(2)}<br>
-        <hr>
-        <b>Уникальных веществ:</b> ${stats.total_unique_substances}<br>
+          <div style="margin-left:5px;">
+            <b>Tick:</b> ${data.tick}<br>
+            <b>TPS:</b> ${tickPerSec}<br>
+            <b>Tick time:</b> ${tickTime} ms<br>
+            <b>World size:</b> ${width}×${height}<br>
+          </div>
 
-        <span style="color:#5DF53B">Органика:</span> ${stats.substances_by_type.ORGANIC}<br>
-        <span>Суммарная концентрация:</span> ${stats.substances_concentration_by_type.ORGANIC}<br>
+          <hr style="border-color:#333; margin:6px 0;">
 
-        <span style="color:#3BCAF5">Неорганика:</span> ${stats.substances_by_type.INORGANIC}<br>
-        <span>Суммарная концентрация:</span> ${stats.substances_concentration_by_type.INORGANIC}<br>
+          <div style="color:#3bf5c4; font-weight:bold; font-size:15px; margin-bottom:4px;">🧫 CELLS</div>
+          <div style="margin-left:5px;">
+            <b>Total cells:</b> ${stats.cells_total}<br>
+            <b>Cell limit:</b> ${stats.cells_limit}<br>
+            <b>Avg. energy:</b> ${stats.avg_energy.toFixed(2)}<br>
+            <b>Avg. health:</b> ${stats.avg_health.toFixed(2)}<br>
+            <b>Avg. age:</b> ${stats.avg_age.toFixed(2)}<br>
+            <b>Avg. genes:</b> ${stats.avg_genes.toFixed(2)}<br>
+            <b>Avg. active genes:</b> ${stats.avg_active_genes.toFixed(2)}<br>
+          </div>
 
-        <span style="color:#F55B3B">Токсины:</span> ${stats.substances_by_type.TOXIN}<br>
-        <span>Суммарная концентрация:</span> ${stats.substances_concentration_by_type.TOXIN}<br>
+          <hr style="border-color:#333; margin:6px 0;">
 
-        <hr>
-        <b>Размер мира:</b> ${width}×${height}
-      `;
+          <div style="color:#f5a33b; font-weight:bold; font-size:15px; margin-bottom:4px;">🧪 SUBSTANCES</div>
+          <div style="margin-left:5px;">
+            <b>Unique substances:</b> ${stats.total_unique_substances}<br><br>
+
+            <span style="color:#5DF53B; font-weight:bold;">Organic:</span><br>
+            &nbsp;• Count: ${stats.substances_by_type.ORGANIC}<br>
+            &nbsp;• Total concentration: ${stats.substances_concentration_by_type.ORGANIC}<br><br>
+
+            <span style="color:#3BCAF5; font-weight:bold;">Inorganic:</span><br>
+            &nbsp;• Count: ${stats.substances_by_type.INORGANIC}<br>
+            &nbsp;• Total concentration: ${stats.substances_concentration_by_type.INORGANIC}<br><br>
+
+            <span style="color:#F55B3B; font-weight:bold;">Toxins:</span><br>
+            &nbsp;• Count: ${stats.substances_by_type.TOXIN}<br>
+            &nbsp;• Total concentration: ${stats.substances_concentration_by_type.TOXIN}<br>
+          </div>
+
+          <hr style="border-color:#333; margin:6px 0;">
+        `;
     }
 
     function renderWorld(data) {
