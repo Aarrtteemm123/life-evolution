@@ -124,6 +124,22 @@
       const tickTime = data.tick_time_ms ? data.tick_time_ms.toFixed(3) : 0;
       const tickPerSec = tickTime ? (1000/tickTime).toFixed(1) : 0;
 
+      // рендер топ-цветов клеток (по полю top_cells с бэка)
+      const topCells = (stats && Array.isArray(stats.top_cells)) ? stats.top_cells : [];
+      const topCellsHtml = topCells.length ?
+      topCells.map(item => {
+        const hex = (typeof item.key === "string" && item.key.startsWith("#")) ? item.key : "#BBBBBB";
+        const count = item.count ?? 0;
+        return `
+            <div style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px dashed #2a2a2a;">
+                <span title="${hex}" style="width:14px; height:14px; border-radius:3px; background:${hex}; border:1px solid #000;"></span>
+                <code style="color:#ccc; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${hex}</code>
+                <span style="color:#9adf6a; font-weight:bold;">${count}</span>
+              </div>
+            `;
+          }).join("")
+        : `<div style="color:#666;">—</div>`;
+
       statsBox.innerHTML = `
           <div style="margin-left:5px;">
             <b>Tick:</b> ${data.tick}<br>
@@ -149,15 +165,15 @@
 
           <div style="color:#f5a33b; font-weight:bold; font-size:15px; margin-bottom:4px;">🧪 SUBSTANCES</div>
           <div style="margin-left:5px;">
-            <b>Unique substances:</b> ${stats.total_unique_substances}<br><br>
+            <b>Unique substances:</b> ${stats.total_unique_substances}<br>
 
             <span style="color:#5DF53B; font-weight:bold;">Organic:</span><br>
             &nbsp;• Count: ${stats.substances_by_type.ORGANIC}<br>
-            &nbsp;• Total concentration: ${stats.substances_concentration_by_type.ORGANIC}<br><br>
+            &nbsp;• Total concentration: ${stats.substances_concentration_by_type.ORGANIC}<br>
 
             <span style="color:#3BCAF5; font-weight:bold;">Inorganic:</span><br>
             &nbsp;• Count: ${stats.substances_by_type.INORGANIC}<br>
-            &nbsp;• Total concentration: ${stats.substances_concentration_by_type.INORGANIC}<br><br>
+            &nbsp;• Total concentration: ${stats.substances_concentration_by_type.INORGANIC}<br>
 
             <span style="color:#F55B3B; font-weight:bold;">Toxins:</span><br>
             &nbsp;• Count: ${stats.substances_by_type.TOXIN}<br>
@@ -165,6 +181,10 @@
           </div>
 
           <hr style="border-color:#333; margin:6px 0;">
+          <div style="color:#a3f53b; font-weight:bold; font-size:15px; margin-bottom:4px;">🎨 TOP CELLS</div>
+          <div style="margin-left:5px;">
+            ${topCellsHtml}
+          </div>
         `;
     }
 
