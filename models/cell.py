@@ -1,3 +1,4 @@
+import hashlib
 import math
 import random
 from typing import List
@@ -20,7 +21,8 @@ class Cell:
         health: float = 100.0,
         age: int = 0,
         alive: bool = True,
-        genes: List["Gene"] | None = None
+        genes: List["Gene"] | None = None,
+        color_hex: str | None = None,
     ):
         # --- базовые параметры ---
         self.position = position
@@ -31,6 +33,10 @@ class Cell:
 
         # --- генетическая информация ---
         self.genes: List[Gene] = genes or []
+
+        self.color_hex = color_hex
+        if not color_hex:
+            self.update_color()
 
     def update(self, environment: "Environment"):
         """
@@ -174,17 +180,30 @@ class Cell:
             self.position[0] + random.choice((0.5, -0.5)),
             self.position[1] + random.choice((0.5, -0.5))
         )
-        new_cell.mutate()
+        mutated = new_cell.mutate()
+        if mutated:
+            new_cell.update_color()
+
         return new_cell
 
     def mutate(self):
         """Мутация всей клетки (генов и параметров)."""
+        changed = False
         new_genes = []
         for gene in self.genes:
-            new_gene = gene.mutate()
-            if new_gene:
-                new_genes.append(new_gene)
-        self.genes.extend(new_genes)
+            before = gene.to_dict()
+            created = gene.mutate()
+            if created:
+                new_genes.append(created)
+                changed = True
+            elif gene.to_dict() != before:
+                changed = True
+
+        if new_genes:
+            self.genes.extend(new_genes)
+            changed = True
+
+        return changed
 
     def die(self, environment: "Environment"):
         """Прекращает жизнь клетки и выделяет вещества в окружающую среду."""
@@ -234,6 +253,28 @@ class Cell:
     def is_alive(self) -> bool:
         return self.alive
 
+    def get_genes_signature(self) -> str:
+        """Короткая сигнатура: отсортированные ключи генов в строку."""
+        parts = [g.to_tuple() for g in self.genes]
+        parts.sort()
+        return "|".join(":".join(map(str, p)) for p in parts)
+
+    def update_color(self):
+        sig = self.get_genes_signature().encode("utf-8")
+        digest = hashlib.sha1(sig, usedforsecurity=False).digest()  # 20 байт
+
+        r = digest[0] ^ digest[3] ^ digest[6] ^ digest[9] ^ digest[12] ^ digest[15] ^ digest[18]
+        g = digest[1] ^ digest[4] ^ digest[7] ^ digest[10] ^ digest[13] ^ digest[16] ^ digest[19]
+        b = digest[2] ^ digest[5] ^ digest[8] ^ digest[11] ^ digest[14] ^ digest[17]
+
+        # Немного «поднять» яркость, чтобы цвет не был слишком тёмным.
+        # Простая арифметика, без сложной колористики:
+        r = 64 + r // 2  # 64..191
+        g = 64 + g // 2
+        b = 64 + b // 2
+
+        self.color_hex = f"#{r:02X}{g:02X}{b:02X}"
+
     def clone(self) -> 'Cell':
         """Создаёт копию без мутации."""
         return Cell.from_dict(self.to_dict())
@@ -244,6 +285,7 @@ class Cell:
             "energy": self.energy,
             "health": self.health,
             "age": self.age,
+            "color_hex": self.color_hex,
             "genes": [g.to_dict() for g in self.genes],
         }
 
@@ -258,10 +300,12 @@ class Cell:
         cell.health = data["health"]
         cell.age = data["age"]
         cell.genes = [Gene.from_dict(g) for g in data.get("genes", [])]
+        cell.color_hex = data["color_hex"]
         return cell
 
     def __repr__(self):
         return (
             f"Cell(pos={self.position}, E={self.energy:.2f}, H={self.health:.2f}, "
-            f"genes={len(self.genes)}, age={self.age})"
+            f"genes={len(self.genes)}, age={self.age}, "
+            f"color_hex={self.color_hex})"
         )

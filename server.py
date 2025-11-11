@@ -62,7 +62,7 @@ def build_render_state(world: World) -> dict:
             })
 
     # только позиции клеток
-    cells = [{"position": c.position} for c in env.cells]
+    cells = [{"position": c.position, "color_hex": c.color_hex} for c in env.cells]
 
     return {
         "tick": world.tick,

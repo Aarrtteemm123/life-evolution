@@ -140,6 +140,19 @@ class Gene:
             action=action
         )
 
+    def to_tuple(self) -> tuple:
+        """Простой стабильный ключ гена."""
+        return (
+            self.receptor,
+            getattr(self.trigger, "mode", ""),
+            round(getattr(self.trigger, "threshold", 0.0), 3),
+            getattr(self.action, "type", ""),
+            round(getattr(self.action, "power", 0.0), 3),
+            getattr(self.action, "substance_name", "") or "",
+            getattr(self.action, "move_mode", "") or "",
+            self.active,
+        )
+
 
     def clone(self) -> 'Gene':
         """Создаёт копию без мутации."""
