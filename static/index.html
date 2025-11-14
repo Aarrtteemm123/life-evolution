@@ -81,6 +81,30 @@
             border-color: #f55b3b;
         }
 
+        .save-button,
+        .load-button {
+            margin-top: 8px;
+            width: 100%;
+            padding: 6px 10px;
+            border-radius: 4px;
+            background: #181818;
+            color: #ddd;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            border: 1px solid #3b7ff5;
+        }
+
+        .load-button {
+            border-color: #f5a33b;
+        }
+
+        .save-button:disabled,
+        .load-button:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+
         /* Поле симуляции */
         #canvas-container {
             flex-grow: 1;
@@ -103,23 +127,6 @@
             text-align: center;
             margin-top: 10px;
         }
-
-        .save-button {
-            margin-top: 8px;
-            width: 100%;
-            padding: 6px 10px;
-            border-radius: 4px;
-            border: 1px solid #3b7ff5;
-            background: #181c2a;
-            color: #ddd;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 13px;
-        }
-        .save-button:disabled {
-            opacity: 0.4;
-            cursor: default;
-        }
     </style>
 </head>
 <body>
@@ -139,8 +146,10 @@
             <button id="btn-stop">Stop</button>
         </div>
 
-        <!-- Кнопка сохранения мира -->
+        <!-- Кнопки сохранения/загрузки -->
         <button id="btn-save" class="save-button">💾 Save world</button>
+        <input type="file" id="load-file" accept="application/json" style="display:none;">
+        <button id="btn-load" class="load-button">📂 Load world</button>
 
         <h2>📊 World Stats</h2>
         <div class="stats" id="stats"></div>
@@ -165,18 +174,22 @@
     const showInorganic = document.getElementById("toggle-inorganic");
     const showToxin = document.getElementById("toggle-toxin");
 
+    // кнопки
     const btnStart = document.getElementById("btn-start");
     const btnStop  = document.getElementById("btn-stop");
     const btnSave  = document.getElementById("btn-save");
+    const btnLoad  = document.getElementById("btn-load");
+    const loadFileInput = document.getElementById("load-file");
 
     let scale = 0;
     let isRunning = true; // по умолчанию симуляция запущена
 
-    function sendControl(command) {
+    function sendControl(command, extra) {
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
                 type: "control",
-                command: command
+                command: command,
+                ...(extra || {})
             }));
         }
     }
@@ -185,7 +198,8 @@
         const wsOk = ws && ws.readyState === WebSocket.OPEN;
         btnStart.disabled = !wsOk || isRunning;
         btnStop.disabled  = !wsOk || !isRunning;
-        btnSave.disabled  = !wsOk;   // Save доступен только при подключённом WS
+        btnSave.disabled  = !wsOk;
+        btnLoad.disabled  = !wsOk;
     }
 
     function setRunning(running) {
@@ -204,18 +218,32 @@
     });
 
     btnSave.addEventListener("click", () => {
-        // просто просим сервер выслать полный state
         sendControl("save");
     });
 
-    btnStart.addEventListener("click", () => {
-        setRunning(true);          // локально сразу переключим
-        sendControl("start");
+    btnLoad.addEventListener("click", () => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        loadFileInput.click();
     });
 
-    btnStop.addEventListener("click", () => {
-        setRunning(false);
-        sendControl("stop");
+    loadFileInput.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const text = e.target.result;
+                const state = JSON.parse(text);
+                // отправляем полное состояние на сервер
+                sendControl("load", { state });
+            } catch (err) {
+                console.error("Failed to parse save file", err);
+            } finally {
+                loadFileInput.value = "";
+            }
+        };
+        reader.readAsText(file, "utf-8");
     });
 
     ws.onopen = () => {
@@ -226,15 +254,19 @@
         btnStart.disabled = true;
         btnStop.disabled  = true;
         btnSave.disabled  = true;
+        btnLoad.disabled  = true;
     };
 
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
 
-        // служебные сообщения
+        // служебные сообщения статуса / результата загрузки
         if (data.type === "status") {
             if (typeof data.running === "boolean") {
                 setRunning(data.running);
+            }
+            if (data.error) {
+                console.error("Server status error:", data.error);
             }
             return;
         }
@@ -270,7 +302,6 @@
 
         URL.revokeObjectURL(url);
     }
-
 
     function updateStats(data) {
         const env = data.environment;

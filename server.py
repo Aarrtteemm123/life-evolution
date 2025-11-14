@@ -27,7 +27,7 @@ async def index(request):
 
 async def websocket_handler(request):
     """Обработчик WebSocket для фронтенда."""
-    global sim_running
+    global sim_running, world
 
     ws = web.WebSocketResponse()
     await ws.prepare(request)
@@ -43,7 +43,7 @@ async def websocket_handler(request):
             if msg.type == web.WSMsgType.TEXT:
                 raw = msg.data.strip()
 
-                # старый ping для совместимости
+                # старый ping
                 if raw == "ping":
                     await ws.send_str("pong")
                     continue
@@ -74,7 +74,6 @@ async def websocket_handler(request):
                         }))
 
                     elif command == "save":
-                        # формируем полное состояние мира
                         full_state = world.to_dict()
                         filename = f"world_state_tick_{world.tick}.json"
                         print(f"💾 Save requested via WS -> {filename}")
@@ -84,6 +83,42 @@ async def websocket_handler(request):
                             "filename": filename,
                             "state": full_state,
                         }))
+
+                    elif command == "load":
+                        state = data.get("state")
+                        if not isinstance(state, dict):
+                            await ws.send_str(json.dumps({
+                                "type": "status",
+                                "running": sim_running,
+                                "error": "invalid_state"
+                            }))
+                            continue
+
+                        try:
+                            # создаём новый мир из словаря
+                            new_world = World.from_dict(state)
+                            world = new_world
+                            sim_running = True  # после загрузки продолжаем симуляцию
+
+                            print(f"📂 World loaded via WS, tick={world.tick}")
+
+                            # отправим статус и один кадр, чтобы фронт сразу обновился
+                            await ws.send_str(json.dumps({
+                                "type": "status",
+                                "running": sim_running,
+                                "loaded_tick": world.tick
+                            }))
+                            full_state = build_render_state(world)
+                            await ws.send_str(json.dumps(full_state))
+
+                        except Exception as e:
+                            print(f"❌ Load failed: {e}")
+                            await ws.send_str(json.dumps({
+                                "type": "status",
+                                "running": sim_running,
+                                "error": "load_failed"
+                            }))
+
     finally:
         websocket_clients.remove(ws)
         print("❌ Клиент отключён")
@@ -96,6 +131,7 @@ def build_render_state(world: World) -> dict:
     """Формирует облегчённое состояние для фронта (только отрисовка и статистика)."""
     env = world.env
 
+    # минимальная сетка веществ: только нужные поля
     substances = []
     for (x, y), subs in env.grid.grid.items():
         for s in subs:
@@ -108,6 +144,7 @@ def build_render_state(world: World) -> dict:
                 "concentration": s.concentration,
             })
 
+    # только позиции клеток
     cells = [{"position": c.position, "color_hex": c.color_hex} for c in env.cells]
 
     return {
@@ -127,9 +164,8 @@ def build_render_state(world: World) -> dict:
 
 
 async def simulation_loop():
-    global sim_running
+    global sim_running, world
 
-    # чтобы при остановке продолжать рассылать последний кадр
     last_state = build_render_state(world)
 
     while True:
