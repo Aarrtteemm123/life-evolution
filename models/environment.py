@@ -62,7 +62,7 @@ class Environment:
         if len(self.cells) < 2:
             return
 
-        min_distance = 1.5 * CELL_RADIUS  # минимальное расстояние между центрами клеток
+        min_distance = 1.8 * CELL_RADIUS  # минимальное расстояние между центрами клеток
 
         # Проходим по всем парам клеток
         for i in range(len(self.cells)):
