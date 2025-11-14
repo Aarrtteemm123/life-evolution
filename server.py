@@ -9,129 +9,165 @@ from models.world import World
 from helpers import populate_world
 
 
-# === Симуляция ===
-world = World(WORLD_WIDTH, WORLD_HEIGHT)
-populate_world(world)
-
-# флаг запуска/остановки
-sim_running = True
-
-# === Глобальное хранилище клиентов ===
-websocket_clients = set()
-
 # === Маршруты HTTP ===
 async def index(request):
     """Отдаёт главную страницу."""
     return web.FileResponse("static/index.html")
 
 
+async def client_simulation_loop(ws: web.WebSocketResponse, state: dict):
+    """
+    Отдельный цикл симуляции для каждого клиента.
+    state = {
+        "world": World,
+        "sim_running": bool,
+        "last_state": dict,
+    }
+    """
+    while not ws.closed:
+        start_time = time.perf_counter()
+
+        if state["sim_running"]:
+            state["world"].update()
+            state["last_state"] = build_render_state(state["world"])
+
+        message = json.dumps(state["last_state"])
+
+        try:
+            await ws.send_str(message)
+        except ConnectionResetError:
+            break
+
+        elapsed = time.perf_counter() - start_time
+        delay = FRAME_TIME - elapsed
+
+        if delay > 0:
+            await asyncio.sleep(delay)
+        else:
+            # симуляция без паузы
+            await asyncio.sleep(0)
+
+
 async def websocket_handler(request):
     """Обработчик WebSocket для фронтенда."""
-    global sim_running, world
-
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
-    websocket_clients.add(ws)
     print("🌐 Клиент подключён")
 
+    # === Инициализируем отдельный мир ДЛЯ ЭТОГО клиента ===
+    world = World(WORLD_WIDTH, WORLD_HEIGHT)
+    populate_world(world)
+
+    state = {
+        "world": world,
+        "sim_running": True,
+        "last_state": build_render_state(world),
+    }
+
     # при подключении сразу отправим статус
-    await ws.send_str(json.dumps({"type": "status", "running": sim_running}))
+    await ws.send_str(json.dumps({"type": "status", "running": state["sim_running"]}))
+
+    # запускаем клиентский цикл симуляции
+    sim_task = asyncio.create_task(client_simulation_loop(ws, state))
 
     try:
         async for msg in ws:
-            if msg.type == web.WSMsgType.TEXT:
-                raw = msg.data.strip()
+            if msg.type != web.WSMsgType.TEXT:
+                continue
 
-                # старый ping
-                if raw == "ping":
-                    await ws.send_str("pong")
+            raw = msg.data.strip()
+
+            # старый ping
+            if raw == "ping":
+                await ws.send_str("pong")
+                continue
+
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+
+            if data.get("type") != "control":
+                continue
+
+            command = data.get("command")
+
+            if command == "start":
+                state["sim_running"] = True
+                print("▶️  Simulation started via WS (client)")
+                await ws.send_str(json.dumps({
+                    "type": "status",
+                    "running": state["sim_running"]
+                }))
+
+            elif command == "stop":
+                state["sim_running"] = False
+                print("⏸️  Simulation stopped via WS (client)")
+                await ws.send_str(json.dumps({
+                    "type": "status",
+                    "running": state["sim_running"]
+                }))
+
+            elif command == "save":
+                full_state = state["world"].to_dict()
+                filename = f"world_state_tick_{state['world'].tick}.json"
+                print(f"💾 Save requested via WS -> {filename}")
+
+                await ws.send_str(json.dumps({
+                    "type": "save",
+                    "filename": filename,
+                    "state": full_state,
+                }))
+
+            elif command == "load":
+                save_state = data.get("state")
+                if not isinstance(save_state, dict):
+                    await ws.send_str(json.dumps({
+                        "type": "status",
+                        "running": state["sim_running"],
+                        "error": "invalid_state"
+                    }))
                     continue
 
-                # пробуем разобрать JSON
                 try:
-                    data = json.loads(raw)
-                except json.JSONDecodeError:
-                    continue
+                    # создаём новый мир из словаря
+                    new_world = World.from_dict(save_state)
+                    state["world"] = new_world
+                    state["last_state"] = build_render_state(new_world)
+                    state["sim_running"] = True  # после загрузки продолжаем симуляцию
 
-                if data.get("type") == "control":
-                    command = data.get("command")
+                    print(f"📂 World loaded via WS (client), tick={new_world.tick}")
 
-                    if command == "start":
-                        sim_running = True
-                        print("▶️  Simulation started via WS")
-                        await ws.send_str(json.dumps({
-                            "type": "status",
-                            "running": sim_running
-                        }))
+                    # отправим статус и один кадр, чтобы фронт сразу обновился
+                    await ws.send_str(json.dumps({
+                        "type": "status",
+                        "running": state["sim_running"],
+                        "loaded_tick": new_world.tick
+                    }))
+                    await ws.send_str(json.dumps(state["last_state"]))
 
-                    elif command == "stop":
-                        sim_running = False
-                        print("⏸️  Simulation stopped via WS")
-                        await ws.send_str(json.dumps({
-                            "type": "status",
-                            "running": sim_running
-                        }))
-
-                    elif command == "save":
-                        full_state = world.to_dict()
-                        filename = f"world_state_tick_{world.tick}.json"
-                        print(f"💾 Save requested via WS -> {filename}")
-
-                        await ws.send_str(json.dumps({
-                            "type": "save",
-                            "filename": filename,
-                            "state": full_state,
-                        }))
-
-                    elif command == "load":
-                        state = data.get("state")
-                        if not isinstance(state, dict):
-                            await ws.send_str(json.dumps({
-                                "type": "status",
-                                "running": sim_running,
-                                "error": "invalid_state"
-                            }))
-                            continue
-
-                        try:
-                            # создаём новый мир из словаря
-                            new_world = World.from_dict(state)
-                            world = new_world
-                            sim_running = True  # после загрузки продолжаем симуляцию
-
-                            print(f"📂 World loaded via WS, tick={world.tick}")
-
-                            # отправим статус и один кадр, чтобы фронт сразу обновился
-                            await ws.send_str(json.dumps({
-                                "type": "status",
-                                "running": sim_running,
-                                "loaded_tick": world.tick
-                            }))
-                            full_state = build_render_state(world)
-                            await ws.send_str(json.dumps(full_state))
-
-                        except Exception as e:
-                            print(f"❌ Load failed: {e}")
-                            await ws.send_str(json.dumps({
-                                "type": "status",
-                                "running": sim_running,
-                                "error": "load_failed"
-                            }))
+                except Exception as e:
+                    print(f"❌ Load failed: {e}")
+                    await ws.send_str(json.dumps({
+                        "type": "status",
+                        "running": state["sim_running"],
+                        "error": "load_failed"
+                    }))
 
     finally:
-        websocket_clients.remove(ws)
         print("❌ Клиент отключён")
+        sim_task.cancel()
+        await asyncio.gather(sim_task, return_exceptions=True)
 
     return ws
 
 
-# === Основной цикл симуляции ===
+# === Формирование облегчённого state для фронта ===
 def build_render_state(world: World) -> dict:
     """Формирует облегчённое состояние для фронта (только отрисовка и статистика)."""
     env = world.env
 
-    # минимальная сетка веществ: только нужные поля
     substances = []
     for (x, y), subs in env.grid.grid.items():
         for s in subs:
@@ -144,7 +180,6 @@ def build_render_state(world: World) -> dict:
                 "concentration": s.concentration,
             })
 
-    # только позиции клеток
     cells = [{"position": c.position, "color_hex": c.color_hex} for c in env.cells]
 
     return {
@@ -163,58 +198,11 @@ def build_render_state(world: World) -> dict:
     }
 
 
-async def simulation_loop():
-    global sim_running, world
-
-    last_state = build_render_state(world)
-
-    while True:
-        start_time = time.perf_counter()
-
-        # === Логика симуляции ===
-        if sim_running:
-            world.update()
-            last_state = build_render_state(world)
-
-        message = json.dumps(last_state)
-
-        # === Рассылка клиентам ===
-        if websocket_clients:
-            await asyncio.gather(
-                *(ws.send_str(message) for ws in websocket_clients),
-                return_exceptions=True
-            )
-
-        # === Вычисляем время цикла ===
-        elapsed = time.perf_counter() - start_time
-        delay = FRAME_TIME - elapsed
-
-        # === Адаптивная пауза ===
-        if delay > 0:
-            await asyncio.sleep(delay)
-        else:
-            await asyncio.sleep(0.000001)
-
-
 # === Инициализация приложения ===
-async def on_startup(app):
-    app["sim_task"] = asyncio.create_task(simulation_loop())
-    print("🚀 Simulation started...")
-
-
-async def on_shutdown(app):
-    app["sim_task"].cancel()
-    await asyncio.gather(app["sim_task"], return_exceptions=True)
-    print("🛑 Simulation stopped.")
-
-
 app = web.Application()
 app.router.add_get("/", index)
 app.router.add_get("/ws", websocket_handler)
 app.router.add_static("/static/", path=os.path.join(os.getcwd(), "static"), name="static")
-
-app.on_startup.append(on_startup)
-app.on_shutdown.append(on_shutdown)
 
 if __name__ == "__main__":
     web.run_app(app, host="0.0.0.0", port=8080)
