@@ -50,6 +50,37 @@
             border-radius: 6px;
         }
 
+        .controls-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .controls-buttons button {
+            flex: 1;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #333;
+            background: #181818;
+            color: #ddd;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+        }
+
+        .controls-buttons button:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        .controls-buttons button#btn-start {
+            border-color: #3bca5d;
+        }
+
+        .controls-buttons button#btn-stop {
+            border-color: #f55b3b;
+        }
+
         /* Поле симуляции */
         #canvas-container {
             flex-grow: 1;
@@ -85,6 +116,12 @@
             <label><input type="checkbox" id="toggle-toxin" checked> Display toxins</label>
         </div>
 
+        <!-- Кнопки управления симуляцией -->
+        <div class="controls-buttons">
+            <button id="btn-start">Start</button>
+            <button id="btn-stop">Stop</button>
+        </div>
+
         <h2>📊 World Stats</h2>
         <div class="stats" id="stats"></div>
     </div>
@@ -108,26 +145,77 @@
     const showInorganic = document.getElementById("toggle-inorganic");
     const showToxin = document.getElementById("toggle-toxin");
 
+    // кнопки
+    const btnStart = document.getElementById("btn-start");
+    const btnStop = document.getElementById("btn-stop");
+
     let scale = 0;
+    let isRunning = true; // по умолчанию симуляция запущена
+
+    function sendControl(command) {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+                type: "control",
+                command: command
+            }));
+        }
+    }
+
+    function updateButtons() {
+        btnStart.disabled = !ws || ws.readyState !== WebSocket.OPEN || isRunning;
+        btnStop.disabled = !ws || ws.readyState !== WebSocket.OPEN || !isRunning;
+    }
+
+    function setRunning(running) {
+        isRunning = running;
+        updateButtons();
+    }
+
+    btnStart.addEventListener("click", () => {
+        setRunning(true);          // локально сразу переключим
+        sendControl("start");
+    });
+
+    btnStop.addEventListener("click", () => {
+        setRunning(false);
+        sendControl("stop");
+    });
+
+    ws.onopen = () => {
+        updateButtons();
+    };
+
+    ws.onclose = () => {
+        // при отключении всё блокируем
+        btnStart.disabled = true;
+        btnStop.disabled = true;
+    };
 
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
+
+        // служебные сообщения статуса
+        if (data.type === "status") {
+            if (typeof data.running === "boolean") {
+                setRunning(data.running);
+            }
+            return;
+        }
+
+        // обычный кадр симуляции
         renderWorld(data);
         updateStats(data);
     };
 
     function updateStats(data) {
         const env = data.environment;
-        const stats = env.env_stats;
         if (!env || !env.grid) return;
 
-        const cellsCount = env.cells ? env.cells.length : 0;
-        const subsCount = env.grid?.substances?.length || 0;
+        const stats = env.env_stats;
         const {width, height} = env.grid;
         const tickTime = data.tick_time_ms ? data.tick_time_ms.toFixed(3) : 0;
         const tickPerSec = tickTime ? (1000 / tickTime).toFixed(1) : 0;
 
-        // рендер топ-цветов клеток (по полю top_cells с бэка)
         const topCells = (stats && Array.isArray(stats.top_cells)) ? stats.top_cells : [];
         const topCellsHtml = topCells.length ?
             topCells.map(item => {
@@ -149,6 +237,7 @@
             <b>TPS:</b> ${tickPerSec}<br>
             <b>Tick time:</b> ${tickTime} ms<br>
             <b>World size:</b> ${width}×${height}<br>
+            <b>Running:</b> ${isRunning ? "yes" : "no"}<br>
           </div>
 
           <hr style="border-color:#333; margin:6px 0;">
@@ -221,13 +310,11 @@
                         ctx.fillStyle = "#888888";
                 }
 
-                // Нормализуем концентрацию в диапазон 0..1
-                const maxC = 20.0;  // максимальная концентрация
-                const minC = 0.1;   // минимальная (или 0)
+                const maxC = 20.0;
+                const minC = 0.1;
                 const norm = Math.min(1, Math.max(0, (s.concentration - minC) / (maxC - minC)));
 
-                // Прозрачность по нормализованной концентрации
-                ctx.globalAlpha = 0.1 + 0.9 * norm;  // от 0.1 до 1.0
+                ctx.globalAlpha = 0.1 + 0.9 * norm;
                 ctx.fillRect(s.x * scale, s.y * scale, scale, scale);
             });
         }

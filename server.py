@@ -13,6 +13,9 @@ from helpers import populate_world
 world = World(WORLD_WIDTH, WORLD_HEIGHT)
 populate_world(world)
 
+# флаг запуска/остановки
+sim_running = True
+
 # === Глобальное хранилище клиентов ===
 websocket_clients = set()
 
@@ -24,18 +27,47 @@ async def index(request):
 
 async def websocket_handler(request):
     """Обработчик WebSocket для фронтенда."""
+    global sim_running
+
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
     websocket_clients.add(ws)
     print("🌐 Клиент подключён")
 
+    # при подключении сразу отправим статус
+    await ws.send_str(json.dumps({"type": "status", "running": sim_running}))
+
     try:
         async for msg in ws:
             if msg.type == web.WSMsgType.TEXT:
-                data = msg.data.strip()
-                if data == "ping":
+                raw = msg.data.strip()
+
+                # старый ping
+                if raw == "ping":
                     await ws.send_str("pong")
+                    continue
+
+                # пробуем разобрать JSON
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+
+                if data.get("type") == "control":
+                    command = data.get("command")
+                    if command == "start":
+                        sim_running = True
+                        print("▶️  Simulation started via WS")
+                    elif command == "stop":
+                        sim_running = False
+                        print("⏸️  Simulation stopped via WS")
+
+                    # подтверждение статуса
+                    await ws.send_str(json.dumps({
+                        "type": "status",
+                        "running": sim_running
+                    }))
     finally:
         websocket_clients.remove(ws)
         print("❌ Клиент отключён")
@@ -48,7 +80,6 @@ def build_render_state(world: World) -> dict:
     """Формирует облегчённое состояние для фронта (только отрисовка и статистика)."""
     env = world.env
 
-    # минимальная сетка веществ: только нужные поля
     substances = []
     for (x, y), subs in env.grid.grid.items():
         for s in subs:
@@ -61,7 +92,6 @@ def build_render_state(world: World) -> dict:
                 "concentration": s.concentration,
             })
 
-    # только позиции клеток
     cells = [{"position": c.position, "color_hex": c.color_hex} for c in env.cells]
 
     return {
@@ -81,13 +111,20 @@ def build_render_state(world: World) -> dict:
 
 
 async def simulation_loop():
+    global sim_running
+
+    # чтобы при остановке продолжать рассылать последний кадр
+    last_state = build_render_state(world)
+
     while True:
         start_time = time.perf_counter()
 
         # === Логика симуляции ===
-        world.update()
-        state = build_render_state(world)
-        message = json.dumps(state)
+        if sim_running:
+            world.update()
+            last_state = build_render_state(world)
+
+        message = json.dumps(last_state)
 
         # === Рассылка клиентам ===
         if websocket_clients:
@@ -104,7 +141,6 @@ async def simulation_loop():
         if delay > 0:
             await asyncio.sleep(delay)
         else:
-            # если симуляция занимает дольше чем 1/FPS, не тормозим цикл
             await asyncio.sleep(0.000001)
 
 
