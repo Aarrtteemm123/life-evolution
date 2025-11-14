@@ -43,7 +43,7 @@ async def websocket_handler(request):
             if msg.type == web.WSMsgType.TEXT:
                 raw = msg.data.strip()
 
-                # старый ping
+                # старый ping для совместимости
                 if raw == "ping":
                     await ws.send_str("pong")
                     continue
@@ -56,18 +56,34 @@ async def websocket_handler(request):
 
                 if data.get("type") == "control":
                     command = data.get("command")
+
                     if command == "start":
                         sim_running = True
                         print("▶️  Simulation started via WS")
+                        await ws.send_str(json.dumps({
+                            "type": "status",
+                            "running": sim_running
+                        }))
+
                     elif command == "stop":
                         sim_running = False
                         print("⏸️  Simulation stopped via WS")
+                        await ws.send_str(json.dumps({
+                            "type": "status",
+                            "running": sim_running
+                        }))
 
-                    # подтверждение статуса
-                    await ws.send_str(json.dumps({
-                        "type": "status",
-                        "running": sim_running
-                    }))
+                    elif command == "save":
+                        # формируем полное состояние мира
+                        full_state = world.to_dict()
+                        filename = f"world_state_tick_{world.tick}.json"
+                        print(f"💾 Save requested via WS -> {filename}")
+
+                        await ws.send_str(json.dumps({
+                            "type": "save",
+                            "filename": filename,
+                            "state": full_state,
+                        }))
     finally:
         websocket_clients.remove(ws)
         print("❌ Клиент отключён")

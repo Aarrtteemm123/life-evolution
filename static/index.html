@@ -103,6 +103,23 @@
             text-align: center;
             margin-top: 10px;
         }
+
+        .save-button {
+            margin-top: 8px;
+            width: 100%;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #3b7ff5;
+            background: #181c2a;
+            color: #ddd;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+        }
+        .save-button:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
     </style>
 </head>
 <body>
@@ -121,6 +138,9 @@
             <button id="btn-start">Start</button>
             <button id="btn-stop">Stop</button>
         </div>
+
+        <!-- Кнопка сохранения мира -->
+        <button id="btn-save" class="save-button">💾 Save world</button>
 
         <h2>📊 World Stats</h2>
         <div class="stats" id="stats"></div>
@@ -145,9 +165,9 @@
     const showInorganic = document.getElementById("toggle-inorganic");
     const showToxin = document.getElementById("toggle-toxin");
 
-    // кнопки
     const btnStart = document.getElementById("btn-start");
-    const btnStop = document.getElementById("btn-stop");
+    const btnStop  = document.getElementById("btn-stop");
+    const btnSave  = document.getElementById("btn-save");
 
     let scale = 0;
     let isRunning = true; // по умолчанию симуляция запущена
@@ -162,14 +182,31 @@
     }
 
     function updateButtons() {
-        btnStart.disabled = !ws || ws.readyState !== WebSocket.OPEN || isRunning;
-        btnStop.disabled = !ws || ws.readyState !== WebSocket.OPEN || !isRunning;
+        const wsOk = ws && ws.readyState === WebSocket.OPEN;
+        btnStart.disabled = !wsOk || isRunning;
+        btnStop.disabled  = !wsOk || !isRunning;
+        btnSave.disabled  = !wsOk;   // Save доступен только при подключённом WS
     }
 
     function setRunning(running) {
         isRunning = running;
         updateButtons();
     }
+
+    btnStart.addEventListener("click", () => {
+        setRunning(true);
+        sendControl("start");
+    });
+
+    btnStop.addEventListener("click", () => {
+        setRunning(false);
+        sendControl("stop");
+    });
+
+    btnSave.addEventListener("click", () => {
+        // просто просим сервер выслать полный state
+        sendControl("save");
+    });
 
     btnStart.addEventListener("click", () => {
         setRunning(true);          // локально сразу переключим
@@ -186,15 +223,15 @@
     };
 
     ws.onclose = () => {
-        // при отключении всё блокируем
         btnStart.disabled = true;
-        btnStop.disabled = true;
+        btnStop.disabled  = true;
+        btnSave.disabled  = true;
     };
 
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
 
-        // служебные сообщения статуса
+        // служебные сообщения
         if (data.type === "status") {
             if (typeof data.running === "boolean") {
                 setRunning(data.running);
@@ -202,10 +239,38 @@
             return;
         }
 
+        // ответ на сохранение полного состояния
+        if (data.type === "save") {
+            handleSaveResponse(data);
+            return;
+        }
+
         // обычный кадр симуляции
         renderWorld(data);
         updateStats(data);
     };
+
+    function handleSaveResponse(data) {
+        const state = data.state;
+        if (!state) return;
+
+        const filename = data.filename || `world_state_tick_${state.tick ?? "unknown"}.json`;
+
+        const blob = new Blob([JSON.stringify(state, null, 2)], {
+            type: "application/json"
+        });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        URL.revokeObjectURL(url);
+    }
+
 
     function updateStats(data) {
         const env = data.environment;
