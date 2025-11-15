@@ -138,6 +138,7 @@
             <label><input type="checkbox" id="toggle-organic" checked> Display organic</label>
             <label><input type="checkbox" id="toggle-inorganic" checked> Display inorganic</label>
             <label><input type="checkbox" id="toggle-toxin" checked> Display toxins</label>
+            <label><input type="checkbox" id="toggle-max-speed"> Max speed (background only)</label>
         </div>
 
         <!-- Кнопки управления симуляцией -->
@@ -170,9 +171,10 @@
     const statsBox = document.getElementById("stats");
 
     // чекбоксы
-    const showOrganic = document.getElementById("toggle-organic");
+    const showOrganic   = document.getElementById("toggle-organic");
     const showInorganic = document.getElementById("toggle-inorganic");
-    const showToxin = document.getElementById("toggle-toxin");
+    const showToxin     = document.getElementById("toggle-toxin");
+    const toggleMaxSpeed = document.getElementById("toggle-max-speed");
 
     // кнопки
     const btnStart = document.getElementById("btn-start");
@@ -182,7 +184,8 @@
     const loadFileInput = document.getElementById("load-file");
 
     let scale = 0;
-    let isRunning = true; // по умолчанию симуляция запущена
+    let isRunning  = true;   // по умолчанию симуляция запущена
+    let isMaxSpeed = false;  // по умолчанию ограничение FPS
 
     function sendControl(command, extra) {
         if (ws.readyState === WebSocket.OPEN) {
@@ -200,11 +203,17 @@
         btnStop.disabled  = !wsOk || !isRunning;
         btnSave.disabled  = !wsOk;
         btnLoad.disabled  = !wsOk;
+        toggleMaxSpeed.disabled = !wsOk;
     }
 
     function setRunning(running) {
         isRunning = running;
         updateButtons();
+    }
+
+    function setMaxSpeed(enabled) {
+        isMaxSpeed = enabled;
+        toggleMaxSpeed.checked = enabled;
     }
 
     btnStart.addEventListener("click", () => {
@@ -224,6 +233,12 @@
     btnLoad.addEventListener("click", () => {
         if (!ws || ws.readyState !== WebSocket.OPEN) return;
         loadFileInput.click();
+    });
+
+    toggleMaxSpeed.addEventListener("change", () => {
+        const enabled = toggleMaxSpeed.checked;
+        setMaxSpeed(enabled);
+        sendControl("speed", { max_speed: enabled });
     });
 
     loadFileInput.addEventListener("change", (event) => {
@@ -255,6 +270,7 @@
         btnStop.disabled  = true;
         btnSave.disabled  = true;
         btnLoad.disabled  = true;
+        toggleMaxSpeed.disabled = true;
     };
 
     ws.onmessage = (event) => {
@@ -264,6 +280,9 @@
         if (data.type === "status") {
             if (typeof data.running === "boolean") {
                 setRunning(data.running);
+            }
+            if (typeof data.max_speed === "boolean") {
+                setMaxSpeed(data.max_speed);
             }
             if (data.error) {
                 console.error("Server status error:", data.error);
@@ -334,6 +353,7 @@
             <b>Tick time:</b> ${tickTime} ms<br>
             <b>World size:</b> ${width}×${height}<br>
             <b>Running:</b> ${isRunning ? "yes" : "no"}<br>
+            <b>Speed mode:</b> ${isMaxSpeed ? "max (background)" : "limited"}<br>
           </div>
 
           <hr style="border-color:#333; margin:6px 0;">

@@ -21,16 +21,25 @@ async def client_simulation_loop(ws: web.WebSocketResponse, state: dict):
     state = {
         "world": World,
         "sim_running": bool,
+        "max_speed": bool,
         "last_state": dict,
     }
     """
     while not ws.closed:
+        # === Режим "max speed": считаем тики, но НЕ шлём кадры на фронт ===
+        if state["sim_running"] and state["max_speed"]:
+            state["world"].update()
+            # здесь нет build_render_state и send_str
+            await asyncio.sleep(0)  # просто отдаём управление event loop
+            continue
+
+        # === Обычный режим (или пауза) c ограничением FPS и отрисовкой ===
         start_time = time.perf_counter()
 
         if state["sim_running"]:
             state["world"].update()
-            state["last_state"] = build_render_state(state["world"])
 
+        state["last_state"] = build_render_state(state["world"])
         message = json.dumps(state["last_state"])
 
         try:
@@ -44,7 +53,6 @@ async def client_simulation_loop(ws: web.WebSocketResponse, state: dict):
         if delay > 0:
             await asyncio.sleep(delay)
         else:
-            # симуляция без паузы
             await asyncio.sleep(0)
 
 
@@ -62,11 +70,16 @@ async def websocket_handler(request):
     state = {
         "world": world,
         "sim_running": True,
+        "max_speed": False,
         "last_state": build_render_state(world),
     }
 
     # при подключении сразу отправим статус
-    await ws.send_str(json.dumps({"type": "status", "running": state["sim_running"]}))
+    await ws.send_str(json.dumps({
+        "type": "status",
+        "running": state["sim_running"],
+        "max_speed": state["max_speed"],
+    }))
 
     # запускаем клиентский цикл симуляции
     sim_task = asyncio.create_task(client_simulation_loop(ws, state))
@@ -98,7 +111,8 @@ async def websocket_handler(request):
                 print("▶️  Simulation started via WS (client)")
                 await ws.send_str(json.dumps({
                     "type": "status",
-                    "running": state["sim_running"]
+                    "running": state["sim_running"],
+                    "max_speed": state["max_speed"],
                 }))
 
             elif command == "stop":
@@ -106,7 +120,19 @@ async def websocket_handler(request):
                 print("⏸️  Simulation stopped via WS (client)")
                 await ws.send_str(json.dumps({
                     "type": "status",
-                    "running": state["sim_running"]
+                    "running": state["sim_running"],
+                    "max_speed": state["max_speed"],
+                }))
+
+            elif command == "speed":
+                max_speed = data.get("max_speed")
+                if isinstance(max_speed, bool):
+                    state["max_speed"] = max_speed
+                    print(f"⚙️  Speed mode changed via WS (client): max_speed={max_speed}")
+                await ws.send_str(json.dumps({
+                    "type": "status",
+                    "running": state["sim_running"],
+                    "max_speed": state["max_speed"],
                 }))
 
             elif command == "save":
@@ -126,6 +152,7 @@ async def websocket_handler(request):
                     await ws.send_str(json.dumps({
                         "type": "status",
                         "running": state["sim_running"],
+                        "max_speed": state["max_speed"],
                         "error": "invalid_state"
                     }))
                     continue
@@ -143,6 +170,7 @@ async def websocket_handler(request):
                     await ws.send_str(json.dumps({
                         "type": "status",
                         "running": state["sim_running"],
+                        "max_speed": state["max_speed"],
                         "loaded_tick": new_world.tick
                     }))
                     await ws.send_str(json.dumps(state["last_state"]))
@@ -152,6 +180,7 @@ async def websocket_handler(request):
                     await ws.send_str(json.dumps({
                         "type": "status",
                         "running": state["sim_running"],
+                        "max_speed": state["max_speed"],
                         "error": "load_failed"
                     }))
 
