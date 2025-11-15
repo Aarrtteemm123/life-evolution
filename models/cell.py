@@ -214,7 +214,7 @@ class Cell:
 
         self.alive = False
         cx, cy = self.get_int_position()
-        total_cell_energy = self.energy + self.health
+        total_cell_energy = self.energy
 
         # === 2. Конвертировать энергию в органику ===
         if total_cell_energy > 0:
