@@ -11,6 +11,7 @@ class EnvStats:
     def __init__(self):
         self.cells_total = 0
         self.cells_limit = CELLS_LIMIT
+        self.unique_cells = 0
         self.avg_energy = 0.0
         self.avg_health = 0.0
         self.avg_age = 0.0
@@ -42,6 +43,7 @@ class EnvStats:
             self.avg_energy = self.avg_health = self.avg_age = self.avg_genes = 0.0
 
         gene_counter = Counter(c.color_hex for c in alive_cells)
+        self.unique_cells = len(gene_counter)
         self.top_cells = [{"key": k, "count": v} for k, v in gene_counter.most_common(5)]
 
         # === 2. Вещества ===
@@ -77,6 +79,7 @@ class EnvStats:
         obj = cls()
         obj.cells_total = data.get("cells_total", 0)
         obj.cells_limit = data.get("cells_limit", 0)
+        obj.unique_cells = data.get("unique_cells", 0)
         obj.avg_energy = data.get("avg_energy", 0.0)
         obj.avg_health = data.get("avg_health", 0.0)
         obj.avg_age = data.get("avg_age", 0.0)
@@ -96,6 +99,7 @@ class EnvStats:
         return {
             "cells_total": self.cells_total,
             "cells_limit": self.cells_limit,
+            "unique_cells": self.unique_cells,
             "avg_energy": self.avg_energy,
             "avg_health": self.avg_health,
             "avg_age": self.avg_age,
@@ -114,6 +118,7 @@ class EnvStats:
             f"age={self.avg_age:.1f}, genes={self.avg_genes:.1f}, "
             f"avg_active_genes={self.avg_active_genes:.1f}, "
             f"top_cells={self.top_cells}, "
+            f"unique_cells={self.unique_cells}, "
             f"total_unique_substances={self.total_unique_substances}),"
             f"total_substances_by_type={self.total_substances_by_type}),"
             f"total_substances_concentration_by_type={self.total_substances_concentration_by_type}),"
