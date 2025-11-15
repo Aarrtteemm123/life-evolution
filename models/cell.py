@@ -23,18 +23,17 @@ class Cell:
         alive: bool = True,
         genes: List["Gene"] | None = None,
         color_hex: str | None = None,
+        mutation_rate: float = 0.07,
     ):
-        # --- базовые параметры ---
         self.position = position
         self.energy = energy
         self.health = health
         self.age = age
         self.alive = alive
-
-        # --- генетическая информация ---
         self.genes: List[Gene] = genes or []
-
         self.color_hex = color_hex
+        self.mutation_rate = mutation_rate
+
         if not color_hex:
             self.update_color()
 
@@ -180,9 +179,11 @@ class Cell:
             self.position[0] + random.choice((0.5, -0.5)),
             self.position[1] + random.choice((0.5, -0.5))
         )
-        mutated = new_cell.mutate()
-        if mutated:
-            new_cell.update_color()
+
+        if self.is_triggered_mutation():
+            mutated = new_cell.mutate()
+            if mutated:
+                new_cell.update_color()
 
         return new_cell
 
@@ -204,6 +205,9 @@ class Cell:
             changed = True
 
         return changed
+
+    def is_triggered_mutation(self):
+        return random.random() < self.mutation_rate
 
     def die(self, environment: "Environment"):
         """Прекращает жизнь клетки и выделяет вещества в окружающую среду."""
@@ -287,6 +291,7 @@ class Cell:
             "health": self.health,
             "age": self.age,
             "color_hex": self.color_hex,
+            "mutation_rate": self.mutation_rate,
             "genes": [g.to_dict() for g in self.genes],
         }
 
@@ -302,11 +307,12 @@ class Cell:
         cell.age = data["age"]
         cell.genes = [Gene.from_dict(g) for g in data.get("genes", [])]
         cell.color_hex = data["color_hex"]
+        cell.mutation_rate = data["mutation_rate"]
         return cell
 
     def __repr__(self):
         return (
             f"Cell(pos={self.position}, E={self.energy:.2f}, H={self.health:.2f}, "
             f"genes={len(self.genes)}, age={self.age}, "
-            f"color_hex={self.color_hex})"
+            f"color_hex={self.color_hex}), mutation_rate={self.mutation_rate:.2f}"
         )
