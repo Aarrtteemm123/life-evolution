@@ -7,6 +7,7 @@ from models.substance_grid import SubstanceGrid
 from models.substance import Substance
 from config import CELL_RADIUS, CELL_REPULSION_FORCE, ORGANIC_TYPES, ORGANIC_SPAWN_PROBABILITY_PER_CELL_PER_TICK
 
+
 class Environment:
     """Среда мира: хранит вещества, клетки и API для взаимодействия."""
 
@@ -92,34 +93,18 @@ class Environment:
                         nx = math.cos(angle)
                         ny = math.sin(angle)
 
-                    # Применяем силу к обеим клеткам (в противоположных направлениях)
-                    # Учитываем энергию клеток: более энергичные клетки меньше смещаются
-                    weight1 = 1.0 / (1.0 + cell1.energy / 100.0)
-                    weight2 = 1.0 / (1.0 + cell2.energy / 100.0)
 
-                    # Смещение первой клетки
-                    offset1_x = nx * force * weight2
-                    offset1_y = ny * force * weight2
-                    new_x1 = cell1.position[0] + offset1_x
-                    new_y1 = cell1.position[1] + offset1_y
+                    # Применяем силу к скорости первой клетки (отталкивание)
+                    v1x, v1y = cell1.velocity
+                    v1x += nx * force
+                    v1y += ny * force
+                    cell1.velocity = (v1x, v1y)
 
-                    # Смещение второй клетки (в противоположную сторону)
-                    offset2_x = -nx * force * weight1
-                    offset2_y = -ny * force * weight1
-                    new_x2 = cell2.position[0] + offset2_x
-                    new_y2 = cell2.position[1] + offset2_y
-
-                    # Ограничиваем границами мира
-                    max_x = self.grid.width - 0.5
-                    max_y = self.grid.height - 0.5
-                    new_x1 = max(0.0, min(max_x, new_x1))
-                    new_y1 = max(0.0, min(max_y, new_y1))
-                    new_x2 = max(0.0, min(max_x, new_x2))
-                    new_y2 = max(0.0, min(max_y, new_y2))
-
-                    # Применяем новые позиции
-                    cell1.position = (new_x1, new_y1)
-                    cell2.position = (new_x2, new_y2)
+                    # Применяем силу к скорости второй клетки (в противоположную сторону)
+                    v2x, v2y = cell2.velocity
+                    v2x += -nx * force
+                    v2y += -ny * force
+                    cell2.velocity = (v2x, v2y)
 
 
     def update_cells(self):

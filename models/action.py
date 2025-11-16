@@ -135,7 +135,7 @@ class Action:
             # Если длина 0, не двигаемся
             return
 
-        cell.move(dx, dy, environment)
+        cell.move(dx, dy)
 
     def clone(self) -> 'Action':
         return Action.from_dict(self.to_dict())

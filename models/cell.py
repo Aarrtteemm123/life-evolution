@@ -3,7 +3,8 @@ import math
 import random
 from typing import List
 
-from config import ORGANIC_TYPES, CELLS_LIMIT, CELL_RADIUS
+from config import ORGANIC_TYPES, CELLS_LIMIT, CELL_RADIUS, FRICTION, MAX_VELOCITY, MAX_ACCELERATION, \
+    ACCELERATION_FACTOR
 from models.gene import Gene
 from models.substance import Substance
 
@@ -24,8 +25,10 @@ class Cell:
         genes: List["Gene"] | None = None,
         color_hex: str | None = None,
         mutation_rate: float = 0.1,
+        velocity: tuple = (0.0, 0.0),
     ):
         self.position = position
+        self.velocity = velocity  # (vx, vy) - скорость
         self.energy = energy
         self.health = health
         self.age = age
@@ -53,6 +56,9 @@ class Cell:
         # активация генов
         for gene in self.genes:
             gene.try_activate(self, environment)
+
+        # применение скорости для плавного движения
+        self.apply_velocity(environment)
 
         # смерть, если энергия или здоровье на нуле
         if self.energy <= 0.01 or self.health <= 0.01:
@@ -146,25 +152,69 @@ class Cell:
                 )
             )
 
-    def move(self, dx: float, dy: float, environment: "Environment"):
-        """Перемещение клетки с ограничением в пределах мира."""
-        new_x = self.position[0] + dx
-        new_y = self.position[1] + dy
-
-        # клэмп по границам сетки
+    def apply_velocity(self, environment: "Environment"):
+        """
+        Применяет скорость к позиции клетки для плавного движения.
+        Также применяет трение для постепенного замедления.
+        """
+        
+        vx, vy = self.velocity
+        
+        # Применяем трение
+        vx *= FRICTION
+        vy *= FRICTION
+        
+        # Ограничиваем максимальную скорость
+        speed = math.hypot(vx, vy)
+        if speed > MAX_VELOCITY:
+            vx = (vx / speed) * MAX_VELOCITY
+            vy = (vy / speed) * MAX_VELOCITY
+        
+        # Обновляем позицию на основе скорости
+        new_x = self.position[0] + vx
+        new_y = self.position[1] + vy
+        
+        # Ограничиваем границами мира
         max_x = environment.grid.width
         max_y = environment.grid.height
         if new_x < 0:
             new_x = CELL_RADIUS
+            vx = 0  # останавливаем при столкновении со стеной
         elif new_x > max_x:
             new_x = max_x - CELL_RADIUS
+            vx = 0
         if new_y < 0:
             new_y = CELL_RADIUS
+            vy = 0
         elif new_y > max_y:
             new_y = max_y - CELL_RADIUS
-
+            vy = 0
+        
         self.position = (new_x, new_y)
-        self.energy -= 0.1 * math.hypot(dx, dy)
+        self.velocity = (vx, vy)
+        
+        # Энергозатраты пропорциональны скорости
+        movement_cost = 0.05 * speed
+        self.energy -= movement_cost
+
+    def move(self, dx: float, dy: float):
+        """
+        Применяет силу к скорости клетки вместо мгновенного перемещения.
+        """
+        
+        # Нормализуем направление если оно не нулевое
+        direction_length = math.hypot(dx, dy)
+        if direction_length > 0:
+            # Нормализуем и умножаем на максимальное ускорение
+            norm_dx = (dx / direction_length) * MAX_ACCELERATION
+            norm_dy = (dy / direction_length) * MAX_ACCELERATION
+            
+            # Применяем ускорение к скорости (интерполяция)
+            vx, vy = self.velocity
+            vx = vx * (1 - ACCELERATION_FACTOR) + norm_dx * ACCELERATION_FACTOR
+            vy = vy * (1 - ACCELERATION_FACTOR) + norm_dy * ACCELERATION_FACTOR
+            
+            self.velocity = (vx, vy)
 
     def divide(self, environment: "Environment"):
         """Создает копию клетки с возможной мутацией."""
@@ -178,6 +228,11 @@ class Cell:
         new_cell.position = (
             self.position[0] + random.choice((0.5, -0.5)),
             self.position[1] + random.choice((0.5, -0.5))
+        )
+        # Новая клетка начинает с небольшой случайной скорости
+        new_cell.velocity = (
+            random.uniform(-0.5, 0.5),
+            random.uniform(-0.5, 0.5)
         )
 
         if self.is_triggered_mutation():
@@ -287,6 +342,7 @@ class Cell:
     def to_dict(self):
         return {
             "position": self.position,
+            "velocity": self.velocity,
             "energy": self.energy,
             "health": self.health,
             "age": self.age,
@@ -302,6 +358,7 @@ class Cell:
     @classmethod
     def from_dict(cls, data):
         cell = cls(position=tuple(data["position"]))
+        cell.velocity = tuple(data.get("velocity", (0.0, 0.0)))
         cell.energy = data["energy"]
         cell.health = data["health"]
         cell.age = data["age"]
@@ -313,6 +370,6 @@ class Cell:
     def __repr__(self):
         return (
             f"Cell(pos={self.position}, E={self.energy:.2f}, H={self.health:.2f}, "
-            f"genes={len(self.genes)}, age={self.age}, "
+            f"genes={len(self.genes)}, age={self.age}, velocity={self.velocity})"
             f"color_hex={self.color_hex}), mutation_rate={self.mutation_rate:.2f}"
         )
