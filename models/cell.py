@@ -57,8 +57,8 @@ class Cell:
         for gene in self.genes:
             gene.try_activate(self, environment)
 
-        # применение скорости для плавного движения
-        self.apply_velocity(environment)
+        # применение скорости для движения
+        self.move(environment)
 
         # смерть, если энергия или здоровье на нуле
         if self.energy <= 0.01 or self.health <= 0.01:
@@ -152,7 +152,7 @@ class Cell:
                 )
             )
 
-    def apply_velocity(self, environment: "Environment"):
+    def move(self, environment: "Environment"):
         """
         Применяет скорость к позиции клетки для плавного движения.
         Также применяет трение для постепенного замедления.
@@ -197,7 +197,7 @@ class Cell:
         movement_cost = 0.05 * speed
         self.energy -= movement_cost
 
-    def move(self, dx: float, dy: float):
+    def calculate_new_velocity(self, dx: float, dy: float):
         """
         Применяет силу к скорости клетки вместо мгновенного перемещения.
         """
