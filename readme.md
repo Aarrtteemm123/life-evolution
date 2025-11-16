@@ -22,3 +22,7 @@ The goal of the project is not a “game with rules,” but **emergent evolution
 Complex behavior arises from simple local rules.
 
 ---
+
+## Demo
+
+![Evolution Simulator Demo](preview_01.png)
