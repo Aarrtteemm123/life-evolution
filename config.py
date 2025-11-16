@@ -1,24 +1,24 @@
 # === Константы симуляции ===
-WORLD_WIDTH = 40
-WORLD_HEIGHT = 40
-CELL_COUNT = 10
-CELLS_LIMIT = 50
+WORLD_WIDTH = 50
+WORLD_HEIGHT = 50
+CELL_COUNT = 50
+CELLS_LIMIT = 1000
 CELL_RADIUS = 0.5  # радиус клетки для физики столкновений
 CELL_REPULSION_FORCE = 1.5  # сила отталкивания при столкновении
 # === Конфигурация распределения веществ ===
 SUBSTANCE_DISTRIBUTION = {
-    "ORGANIC": 500,     # количество органических веществ
+    "ORGANIC": 100,     # количество органических веществ
     "TOXIN": 10,       # количество токсинов
     "INORGANIC": 10    # количество неорганических соединений
 }
-UNIQUE_INORGANIC_COUNT = 10 # количество уникальных неорганических соединений
+UNIQUE_INORGANIC_COUNT = 30 # количество уникальных неорганических соединений
 SIMULATION_STEPS = 1000
 FPS = 60
 FRAME_TIME = 1 / FPS
 SAVES_DIR = "saves/"
 INCLUDE_BASE_GENES = True
 # === вероятность появления органики в каждой ячейке за тик (0.001 = 0.1%) ===
-ORGANIC_SPAWN_PROBABILITY_PER_CELL_PER_TICK = 0.0001
+ORGANIC_SPAWN_PROBABILITY_PER_CELL_PER_TICK = 0.0008
 # === Конфигурация рассеивания веществ ===
 SUBSTANCE_DIFFUSION_RATE = 0.1  # скорость рассеивания (0.0 = отключено, 0.1 = 10% рассеивается в соседние ячейки)
 

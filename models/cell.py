@@ -23,7 +23,7 @@ class Cell:
         alive: bool = True,
         genes: List["Gene"] | None = None,
         color_hex: str | None = None,
-        mutation_rate: float = 0.07,
+        mutation_rate: float = 0.1,
     ):
         self.position = position
         self.energy = energy
