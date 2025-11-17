@@ -27,7 +27,16 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+        }
+
+        /* прокручиваемая область + отступы от скролла и низа */
+        #sidebar > div {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 8px;   /* отступ от вертикального скролла */
+            padding-bottom: 10px; /* отступ снизу, чтобы кнопки не прилипали к краю */
         }
 
         #sidebar h2 {
