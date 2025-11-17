@@ -26,6 +26,7 @@ class Cell:
         color_hex: str | None = None,
         mutation_rate: float = 0.1,
         velocity: tuple = (0.0, 0.0),
+        species_duration = 0
     ):
         self.position = position
         self.velocity = velocity  # (vx, vy) - скорость
@@ -36,6 +37,7 @@ class Cell:
         self.genes: List[Gene] = genes or []
         self.color_hex = color_hex
         self.mutation_rate = mutation_rate
+        self.species_duration = species_duration
 
         if not color_hex:
             self.update_color()
@@ -50,6 +52,7 @@ class Cell:
 
         self.age += 1
         self.energy -= 0.1  # базовое потребление
+        self.species_duration += 1
 
         self.apply_toxin_damage(environment)
 
@@ -238,6 +241,7 @@ class Cell:
         if self.is_triggered_mutation():
             mutated = new_cell.mutate()
             if mutated:
+                new_cell.species_duration = 0
                 new_cell.update_color()
 
         return new_cell
@@ -343,6 +347,7 @@ class Cell:
         return {
             "position": self.position,
             "velocity": self.velocity,
+            "species_duration": self.species_duration,
             "energy": self.energy,
             "health": self.health,
             "age": self.age,
@@ -365,11 +370,13 @@ class Cell:
         cell.genes = [Gene.from_dict(g) for g in data.get("genes", [])]
         cell.color_hex = data["color_hex"]
         cell.mutation_rate = data["mutation_rate"]
+        cell.species_duration = data["species_duration"]
         return cell
 
     def __repr__(self):
         return (
             f"Cell(pos={self.position}, E={self.energy:.2f}, H={self.health:.2f}, "
             f"genes={len(self.genes)}, age={self.age}, velocity={self.velocity})"
-            f"color_hex={self.color_hex}), mutation_rate={self.mutation_rate:.2f}"
+            f"color_hex={self.color_hex}), mutation_rate={self.mutation_rate:.2f},"
+            f"species_duration={self.species_duration}"
         )

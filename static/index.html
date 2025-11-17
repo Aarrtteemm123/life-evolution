@@ -333,6 +333,7 @@
         const tickPerSec = tickTime ? (1000 / tickTime).toFixed(1) : 0;
 
         const topCells = (stats && Array.isArray(stats.top_cells)) ? stats.top_cells : [];
+        const topCellsBySpeciesDuration = (stats && Array.isArray(stats.top_cells_by_species_duration)) ? stats.top_cells_by_species_duration : [];
         const topCellsHtml = topCells.length ?
             topCells.map(item => {
                 const hex = (typeof item.key === "string" && item.key.startsWith("#")) ? item.key : "#BBBBBB";
@@ -342,6 +343,20 @@
                 <span title="${hex}" style="width:14px; height:14px; border-radius:3px; background:${hex}; border:1px solid #000;"></span>
                 <code style="color:#ccc; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${hex}</code>
                 <span style="color:#9adf6a; font-weight:bold;">${count}</span>
+              </div>
+            `;
+            }).join("")
+            : `<div style="color:#666;">—</div>`;
+
+        const topCellsBySpeciesDurationHtml = topCellsBySpeciesDuration.length ?
+            topCellsBySpeciesDuration.map(item => {
+                const hex = (typeof item.key === "string" && item.key.startsWith("#")) ? item.key : "#BBBBBB";
+                const duration = item.species_duration ?? 0;
+                return `
+            <div style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px dashed #2a2a2a;">
+                <span title="${hex}" style="width:14px; height:14px; border-radius:3px; background:${hex}; border:1px solid #000;"></span>
+                <code style="color:#ccc; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${hex}</code>
+                <span style="color:#9adf6a; font-weight:bold;">${duration}</span>
               </div>
             `;
             }).join("")
@@ -394,6 +409,12 @@
           <div style="color:#a3f53b; font-weight:bold; font-size:15px; margin-bottom:4px;">🎨 TOP CELLS</div>
           <div style="margin-left:5px;">
             ${topCellsHtml}
+          </div>
+
+          <hr style="border-color:#333; margin:6px 0;">
+          <div style="color:#a3f53b; font-weight:bold; font-size:15px; margin-bottom:4px;">⏳ TOP SPECIES BY DURATION</div>
+          <div style="margin-left:5px;">
+            ${topCellsBySpeciesDurationHtml}
           </div>
         `;
     }

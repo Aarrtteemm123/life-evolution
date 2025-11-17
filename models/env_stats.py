@@ -1,6 +1,6 @@
 import statistics
 from collections import defaultdict, Counter
-from typing import Dict
+from typing import Dict, List
 
 from config import CELLS_LIMIT
 
@@ -17,7 +17,8 @@ class EnvStats:
         self.avg_age = 0.0
         self.avg_genes = 0.0
         self.avg_active_genes = 0.0
-        self.top_cells = []
+        self.top_cells: List[Dict] = []
+        self.top_cells_by_species_duration = {}
         self.total_unique_substances = 0
         self.total_substances_by_type: Dict[str, int] = {}
         self.total_substances_concentration_by_type: Dict[str, float] = {}
@@ -42,12 +43,31 @@ class EnvStats:
         else:
             self.avg_energy = self.avg_health = self.avg_age = self.avg_genes = 0.0
 
+        # --- 1.1. Топ видов по численности ---
         gene_counter = Counter(c.color_hex for c in alive_cells)
         self.unique_cells = len(gene_counter)
         self.top_cells = [{"key": k, "count": v} for k, v in gene_counter.most_common(5)]
 
+        # --- 1.2. Топ видов по максимальному species_duration ---
+        species_duration_map = defaultdict(int)
+
+        for c in alive_cells:
+            key = c.color_hex
+            # берём максимум по виду
+            if c.species_duration > species_duration_map[key]:
+                species_duration_map[key] = c.species_duration
+
+        # сортируем виды по максимальному species_duration и берём топ-5
+        self.top_cells_by_species_duration = [
+            {"key": key, "species_duration": species_duration}
+            for key, species_duration in sorted(
+                species_duration_map.items(),
+                key=lambda item: item[1],
+                reverse=True,
+            )[:5]
+        ]
+
         # === 2. Вещества ===
-        # Считаем уникальные вещества по имени и типу
         unique_substances = {}  # key=(name, type) → total_concentration
 
         for substances in grid.grid.values():
@@ -55,10 +75,8 @@ class EnvStats:
                 key = (s.name, s.type)
                 unique_substances[key] = unique_substances.get(key, 0.0) + s.concentration
 
-        # Общее количество уникальных веществ
         self.total_unique_substances = len(unique_substances)
 
-        # Группировка по типам
         by_type_count = defaultdict(int)
         by_type_conc = defaultdict(float)
 
@@ -66,7 +84,6 @@ class EnvStats:
             by_type_count[t] += 1
             by_type_conc[t] += total_conc
 
-        # Гарантируем наличие всех категорий
         all_types = ["ORGANIC", "INORGANIC", "TOXIN"]
         self.total_substances_by_type = {t: by_type_count.get(t, 0) for t in all_types}
         self.total_substances_concentration_by_type = {
@@ -85,11 +102,12 @@ class EnvStats:
         obj.avg_age = data.get("avg_age", 0.0)
         obj.avg_genes = data.get("avg_genes", 0.0)
         obj.avg_active_genes = data.get("avg_active_genes", 0.0)
+
         obj.top_cells = data.get("top_cells", [])
-        obj.total_unique_substances = data.get("substances_total", 0)
-        obj.total_substances_by_type = data.get(
-            "substances_by_type", {}
-        )
+        obj.top_cells_by_species_duration = data.get("top_cells_by_species_duration", [])
+
+        obj.total_unique_substances = data.get("total_unique_substances", 0)
+        obj.total_substances_by_type = data.get("substances_by_type", {})
         obj.total_substances_concentration_by_type = data.get(
             "substances_concentration_by_type", {}
         )
@@ -106,6 +124,7 @@ class EnvStats:
             "avg_genes": self.avg_genes,
             "avg_active_genes": self.avg_active_genes,
             "top_cells": self.top_cells,
+            "top_cells_by_species_duration": self.top_cells_by_species_duration,
             "total_unique_substances": self.total_unique_substances,
             "substances_by_type": self.total_substances_by_type,
             "substances_concentration_by_type": self.total_substances_concentration_by_type,
@@ -118,8 +137,9 @@ class EnvStats:
             f"age={self.avg_age:.1f}, genes={self.avg_genes:.1f}, "
             f"avg_active_genes={self.avg_active_genes:.1f}, "
             f"top_cells={self.top_cells}, "
+            f"top_cells_by_species_duration={self.top_cells_by_species_duration}, "
             f"unique_cells={self.unique_cells}, "
-            f"total_unique_substances={self.total_unique_substances}),"
-            f"total_substances_by_type={self.total_substances_by_type}),"
-            f"total_substances_concentration_by_type={self.total_substances_concentration_by_type}),"
+            f"total_unique_substances={self.total_unique_substances}, "
+            f"total_substances_by_type={self.total_substances_by_type}, "
+            f"total_substances_concentration_by_type={self.total_substances_concentration_by_type})"
         )
