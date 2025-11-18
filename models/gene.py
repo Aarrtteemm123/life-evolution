@@ -58,11 +58,12 @@ class Gene:
 
     def mutate(self):
         """Простая мутация параметров гена."""
-        if not self.is_triggered_mutation():
-            return None
 
         if self.is_triggered_mutation():
             self.active = not self.active
+
+        if self.is_triggered_mutation():
+            self.receptor = random.choice(ALL_SUBSTANCE_NAMES)
 
         if self.is_triggered_mutation():
             if self.receptor in ("energy", "health"):
