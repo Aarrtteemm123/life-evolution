@@ -34,10 +34,10 @@ FRICTION: float = 0.85
 MAX_VELOCITY: float = 1.0
 
 # коэффициент изменения скорости от акселерации
-ACCELERATION_FACTOR: float = 0.3
+ACCELERATION_FACTOR: float = 0.07
 
 # максимальное изменение скорости за тик (кап по акселерации)
-MAX_ACCELERATION: float = 1.0
+MAX_ACCELERATION: float = 0.85
 
 # =============================================================================
 # ВРЕМЯ / ШАГИ СИМУЛЯЦИИ
