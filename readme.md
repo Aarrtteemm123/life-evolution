@@ -26,3 +26,26 @@ Complex behavior arises from simple local rules.
 ## Demo
 
 ![Evolution Simulator Demo](preview_01.png)
+
+## How to run the project
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/your-user/evolution-simulator.git
+cd evolution-simulator
+```
+
+### 2. Install dependencies (Requires Python 3.10+)
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Run project
+As server with GUI
+```bash
+python server.py
+```
+or as script
+```bash
+python main.py
+```
