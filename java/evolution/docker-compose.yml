@@ -1,0 +1,9 @@
+version: "3.8"
+
+services:
+  evolution:
+    build: .
+    container_name: evolution
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
