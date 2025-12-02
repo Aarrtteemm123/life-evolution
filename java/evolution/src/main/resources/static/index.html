@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Evolution Simulation</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #0c0c0c;
+            color: #ddd;
+            font-family: "Consolas", monospace;
+            font-size: 12px;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Левая панель */
+        #sidebar {
+            width: 400px;
+            background: #111;
+            border-right: 2px solid #222;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* прокручиваемая область + отступы от скролла и низа */
+        #sidebar > div {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 8px;   /* отступ от вертикального скролла */
+            padding-bottom: 10px; /* отступ снизу, чтобы кнопки не прилипали к краю */
+        }
+
+        #sidebar h2 {
+            font-size: 15px;
+            color: #5df53b;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-group label {
+            display: block;
+            margin: 6px 0;
+            cursor: pointer;
+        }
+
+        .stats {
+            font-size: 10.5px;
+            color: #aaa;
+            line-height: 1.5;
+            background: #181818;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .controls-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .controls-buttons button {
+            flex: 1;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #333;
+            background: #181818;
+            color: #ddd;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 9.75px; /* было 13px */
+        }
+
+        .controls-buttons button:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        .controls-buttons button#btn-start {
+            border-color: #3bca5d;
+        }
+
+        .controls-buttons button#btn-stop {
+            border-color: #f55b3b;
+        }
+
+        .save-button,
+        .load-button {
+            margin-top: 8px;
+            width: 100%;
+            padding: 6px 10px;
+            border-radius: 6px;
+            background: #181818;
+            color: #ddd;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 6.5px;
+            border: 1px solid #3b7ff5;
+        }
+
+        .load-button {
+            border-color: #f5a33b;
+        }
+
+        .save-button:disabled,
+        .load-button:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        /* Поле симуляции */
+        #canvas-container {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #080808;
+        }
+
+        canvas {
+            background: #111;
+            border: 2px solid #444;
+            box-shadow: 0 0 15px rgba(0, 255, 100, 0.15);
+            border-radius: 8px;
+        }
+
+        footer {
+            font-size: 8px;
+            color: #666;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<!-- Боковое меню -->
+<div id="sidebar">
+    <div>
+        <h2>🕹️ Controls</h2>
+        <div class="checkbox-group">
+            <label><input type="checkbox" id="toggle-organic" checked> Display organic</label>
+            <label><input type="checkbox" id="toggle-inorganic" checked> Display inorganic</label>
+            <label><input type="checkbox" id="toggle-toxin" checked> Display toxins</label>
+            <label><input type="checkbox" id="toggle-max-speed"> Max speed (background only)</label>
+        </div>
+
+        <!-- Кнопки управления симуляцией -->
+        <div class="controls-buttons">
+            <button id="btn-start">Start</button>
+            <button id="btn-stop">Stop</button>
+        </div>
+
+        <!-- Кнопки сохранения/загрузки -->
+        <button id="btn-save" class="save-button">💾 Save world</button>
+        <input type="file" id="load-file" accept="application/json" style="display:none;">
+        <button id="btn-load" class="load-button">📂 Load world</button>
+
+        <h2>📊 World Stats</h2>
+        <div class="stats" id="stats"></div>
+    </div>
+
+    <footer>© 2025 Evolution Simulator</footer>
+</div>
+
+<!-- Поле -->
+<div id="canvas-container">
+    <canvas id="world" width="900" height="900"></canvas>
+</div>
+
+<script>
+    const ws = new WebSocket(`ws://${location.host}/ws`);
+    const canvas = document.getElementById("world");
+    const ctx = canvas.getContext("2d");
+    const statsBox = document.getElementById("stats");
+
+    // чекбоксы
+    const showOrganic   = document.getElementById("toggle-organic");
+    const showInorganic = document.getElementById("toggle-inorganic");
+    const showToxin     = document.getElementById("toggle-toxin");
+    const toggleMaxSpeed = document.getElementById("toggle-max-speed");
+
+    // кнопки
+    const btnStart = document.getElementById("btn-start");
+    const btnStop  = document.getElementById("btn-stop");
+    const btnSave  = document.getElementById("btn-save");
+    const btnLoad  = document.getElementById("btn-load");
+    const loadFileInput = document.getElementById("load-file");
+
+    let scale = 0;
+    let isRunning  = true;   // по умолчанию симуляция запущена
+    let isMaxSpeed = false;  // по умолчанию ограничение FPS
+
+    function sendControl(command, extra) {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+                type: "control",
+                command: command,
+                ...(extra || {})
+            }));
+        }
+    }
+
+    function updateButtons() {
+        const wsOk = ws && ws.readyState === WebSocket.OPEN;
+        btnStart.disabled = !wsOk || isRunning;
+        btnStop.disabled  = !wsOk || !isRunning;
+        btnSave.disabled  = !wsOk;
+        btnLoad.disabled  = !wsOk;
+        toggleMaxSpeed.disabled = !wsOk;
+    }
+
+    function setRunning(running) {
+        isRunning = running;
+        updateButtons();
+    }
+
+    function setMaxSpeed(enabled) {
+        isMaxSpeed = enabled;
+        toggleMaxSpeed.checked = enabled;
+    }
+
+    btnStart.addEventListener("click", () => {
+        setRunning(true);
+        sendControl("start");
+    });
+
+    btnStop.addEventListener("click", () => {
+        setRunning(false);
+        sendControl("stop");
+    });
+
+    btnSave.addEventListener("click", () => {
+        sendControl("save");
+    });
+
+    btnLoad.addEventListener("click", () => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        loadFileInput.click();
+    });
+
+    toggleMaxSpeed.addEventListener("change", () => {
+        const enabled = toggleMaxSpeed.checked;
+        setMaxSpeed(enabled);
+        sendControl("speed", { max_speed: enabled });
+    });
+
+    loadFileInput.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const text = e.target.result;
+                const state = JSON.parse(text);
+                // отправляем полное состояние на сервер
+                sendControl("load", { state });
+            } catch (err) {
+                console.error("Failed to parse save file", err);
+            } finally {
+                loadFileInput.value = "";
+            }
+        };
+        reader.readAsText(file, "utf-8");
+    });
+
+    ws.onopen = () => {
+        updateButtons();
+    };
+
+    ws.onclose = () => {
+        btnStart.disabled = true;
+        btnStop.disabled  = true;
+        btnSave.disabled  = true;
+        btnLoad.disabled  = true;
+        toggleMaxSpeed.disabled = true;
+    };
+
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        // служебные сообщения статуса / результата загрузки
+        if (data.type === "status") {
+            if (typeof data.running === "boolean") {
+                setRunning(data.running);
+            }
+            if (typeof data.max_speed === "boolean") {
+                setMaxSpeed(data.max_speed);
+            }
+            if (data.error) {
+                console.error("Server status error:", data.error);
+            }
+            return;
+        }
+
+        // ответ на сохранение полного состояния
+        if (data.type === "save") {
+            handleSaveResponse(data);
+            return;
+        }
+
+        // обычный кадр симуляции
+        renderWorld(data);
+        updateStats(data);
+    };
+
+    function handleSaveResponse(data) {
+        const state = data.state;
+        if (!state) return;
+
+        const filename = data.filename || `world_state_tick_${state.tick ?? "unknown"}.json`;
+
+        const blob = new Blob([JSON.stringify(state, null, 2)], {
+            type: "application/json"
+        });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        URL.revokeObjectURL(url);
+    }
+
+    function updateStats(data) {
+        const env = data.environment;
+        if (!env || !env.grid) return;
+
+        const stats = env.env_stats;
+        const {width, height} = env.grid;
+        const tickTime = data.tick_time_ms ? data.tick_time_ms.toFixed(3) : 0;
+        const tickPerSec = tickTime ? (1000 / tickTime).toFixed(1) : 0;
+
+        const topCells = (stats && Array.isArray(stats.top_cells)) ? stats.top_cells : [];
+        const topCellsBySpeciesDuration = (stats && Array.isArray(stats.top_cells_by_species_duration)) ? stats.top_cells_by_species_duration : [];
+        const topCellsHtml = topCells.length ?
+            topCells.map(item => {
+                const hex = (typeof item.key === "string" && item.key.startsWith("#")) ? item.key : "#BBBBBB";
+                const count = item.count ?? 0;
+                return `
+            <div style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px dashed #2a2a2a;">
+                <span title="${hex}" style="width:14px; height:14px; border-radius:3px; background:${hex}; border:1px solid #000;"></span>
+                <code style="color:#ccc; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${hex}</code>
+                <span style="color:#9adf6a; font-weight:bold;">${count}</span>
+              </div>
+            `;
+            }).join("")
+            : `<div style="color:#666;">—</div>`;
+
+        const topCellsBySpeciesDurationHtml = topCellsBySpeciesDuration.length ?
+            topCellsBySpeciesDuration.map(item => {
+                const hex = (typeof item.key === "string" && item.key.startsWith("#")) ? item.key : "#BBBBBB";
+                const duration = item.species_duration ?? 0;
+                return `
+            <div style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px dashed #2a2a2a;">
+                <span title="${hex}" style="width:14px; height:14px; border-radius:3px; background:${hex}; border:1px solid #000;"></span>
+                <code style="color:#ccc; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${hex}</code>
+                <span style="color:#9adf6a; font-weight:bold;">${duration}</span>
+              </div>
+            `;
+            }).join("")
+            : `<div style="color:#666;">—</div>`;
+
+        statsBox.innerHTML = `
+          <div style="margin-left:5px;">
+            <b>Tick:</b> ${data.tick}<br>
+            <b>TPS:</b> ${tickPerSec}<br>
+            <b>Tick time:</b> ${tickTime} ms<br>
+            <b>World size:</b> ${width}×${height}<br>
+            <b>Running:</b> ${isRunning ? "yes" : "no"}<br>
+            <b>Speed mode:</b> ${isMaxSpeed ? "max (background)" : "limited"}<br>
+          </div>
+
+          <hr style="border-color:#333; margin:6px 0;">
+
+          <div style="color:#3bf5c4; font-weight:bold; font-size:15px; margin-bottom:4px;">🧫 CELLS</div>
+          <div style="margin-left:5px;">
+            <b>Total cells:</b> ${stats.cells_total}<br>
+            <b>Cell limit:</b> ${stats.cells_limit}<br>
+            <b>Unique cells:</b> ${stats.unique_cells}<br>
+            <b>Avg. energy:</b> ${stats.avg_energy.toFixed(2)}<br>
+            <b>Avg. health:</b> ${stats.avg_health.toFixed(2)}<br>
+            <b>Avg. age:</b> ${stats.avg_age.toFixed(2)}<br>
+            <b>Avg. genes:</b> ${stats.avg_genes.toFixed(2)}<br>
+            <b>Avg. active genes:</b> ${stats.avg_active_genes.toFixed(2)}<br>
+          </div>
+
+          <hr style="border-color:#333; margin:6px 0;">
+
+          <div style="color:#f5a33b; font-weight:bold; font-size:15px; margin-bottom:4px;">🧪 SUBSTANCES</div>
+          <div style="margin-left:5px;">
+            <b>Unique substances:</b> ${stats.total_unique_substances}<br>
+
+            <span style="color:#5DF53B; font-weight:bold;">Organic:</span><br>
+            &nbsp;• Count: ${stats.substances_by_type.ORGANIC}<br>
+            &nbsp;• Total concentration: ${stats.substances_concentration_by_type.ORGANIC}<br>
+
+            <span style="color:#3BCAF5; font-weight:bold;">Inorganic:</span><br>
+            &nbsp;• Count: ${stats.substances_by_type.INORGANIC}<br>
+            &nbsp;• Total concentration: ${stats.substances_concentration_by_type.INORGANIC}<br>
+
+            <span style="color:#F55B3B; font-weight:bold;">Toxins:</span><br>
+            &nbsp;• Count: ${stats.substances_by_type.TOXIN}<br>
+            &nbsp;• Total concentration: ${stats.substances_concentration_by_type.TOXIN}<br>
+          </div>
+
+          <hr style="border-color:#333; margin:6px 0;">
+          <div style="color:#a3f53b; font-weight:bold; font-size:15px; margin-bottom:4px;">🎨 TOP CELLS</div>
+          <div style="margin-left:5px;">
+            ${topCellsHtml}
+          </div>
+
+          <hr style="border-color:#333; margin:6px 0;">
+          <div style="color:#a3f53b; font-weight:bold; font-size:15px; margin-bottom:4px;">⏳ TOP SPECIES BY DURATION</div>
+          <div style="margin-left:5px;">
+            ${topCellsBySpeciesDurationHtml}
+          </div>
+        `;
+    }
+
+    function renderWorld(data) {
+        const env = data.environment;
+        if (!env || !env.grid) return;
+
+        const {grid, cells} = env;
+        const {width, height, substances} = grid;
+        scale = Math.min(canvas.width / width, canvas.height / height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // === ВЕЩЕСТВА ===
+        if (substances) {
+            substances.forEach(s => {
+                if (s.type === "TOXIN" && !showToxin.checked) return;
+                if (s.type === "ORGANIC" && !showOrganic.checked) return;
+                if (s.type === "INORGANIC" && !showInorganic.checked) return;
+
+                switch (s.type) {
+                    case "TOXIN":
+                        ctx.fillStyle = "#F55B3B";
+                        break;
+                    case "ORGANIC":
+                        ctx.fillStyle = "#5DF53B";
+                        break;
+                    case "INORGANIC":
+                        ctx.fillStyle = "#3BCAF5";
+                        break;
+                    default:
+                        ctx.fillStyle = "#888888";
+                }
+
+                const maxC = 20.0;
+                const minC = 0.1;
+                const norm = Math.min(1, Math.max(0, (s.concentration - minC) / (maxC - minC)));
+
+                ctx.globalAlpha = 0.1 + 0.9 * norm;
+                ctx.fillRect(s.x * scale, s.y * scale, scale, scale);
+            });
+        }
+
+        // === КЛЕТКИ ===
+        if (cells) {
+            ctx.globalAlpha = 1.0;
+            const cellRadius = data.cell_radius || 0.5;
+            cells.forEach(c => {
+                const [x, y] = c.position;
+                const fill = (typeof c.color_hex === "string" && c.color_hex.startsWith("#")) ? c.color_hex : "#BBBBBB";
+                ctx.beginPath();
+                ctx.arc(x * scale, y * scale, cellRadius * scale, 0, Math.PI * 2);
+                ctx.fillStyle = fill;
+                ctx.fill();
+            });
+        }
+
+        // === Граница поля ===
+        ctx.strokeStyle = "#555";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, width * scale, height * scale);
+    }
+</script>
+</body>
+</html>
