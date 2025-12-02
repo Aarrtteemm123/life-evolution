@@ -39,37 +39,59 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
                 "max_speed", false
         ))));
 
-        // schedule simulation loop
-        executor.scheduleAtFixedRate(() -> tickLoop(session, state),
-                0, (long) (Config.FRAME_TIME * 1000), TimeUnit.MICROSECONDS);
+        // schedule simulation loop (Python-like)
+        executor.scheduleAtFixedRate(
+                () -> tickLoop(session, state),
+                0,
+                (long) (Config.FRAME_TIME * 1_000_000),   // microseconds → nanoseconds
+                TimeUnit.NANOSECONDS
+        );
     }
 
     private void tickLoop(WebSocketSession session, ClientState state) {
         if (!session.isOpen()) return;
 
         try {
-            if (state.maxSpeed && state.simRunning) {
-                state.world.update();
-                return;
-            }
-
             long start = System.nanoTime();
 
-            if (state.simRunning) {
+            // MAX SPEED MODE (no rendering)
+            if (state.simRunning && state.maxSpeed) {
                 state.world.update();
+            } else {
+
+                // Normal mode: update + render
+                if (state.simRunning) {
+                    state.world.update();
+                }
+
+                Map<String, Object> renderState = RenderStateBuilder.buildState(state.world);
+                state.lastState = renderState;
+
+                // Just queue, never send directly in simulation thread
+                state.outgoing.offer(new TextMessage(
+                        mapper.writeValueAsString(renderState)
+                ));
             }
 
-            Map<String, Object> renderState = RenderStateBuilder.buildState(state.world);
-            state.lastState = renderState;
+            // SEND ALL QUEUED MESSAGES (only this thread sends)
+            TextMessage msg;
+            while ((msg = state.outgoing.poll()) != null) {
+                if (session.isOpen()) {
+                    session.sendMessage(msg);
+                }
+            }
 
-            session.sendMessage(new TextMessage(mapper.writeValueAsString(renderState)));
-
+            // Match Python timing
             long elapsed = System.nanoTime() - start;
-            long delay = (long) (Config.FRAME_TIME * 1_000_000) - elapsed;
+            long target = (long) (Config.FRAME_TIME * 1_000_000_000L);
+            long remaining = target - elapsed;
 
-            if (delay > 0) Thread.sleep(delay / 1_000_000);
+            if (remaining > 0) {
+                Thread.sleep(remaining / 1_000_000, (int) (remaining % 1_000_000));
+            }
 
-        } catch (Exception ignored) {}
+        } catch (Exception ignore) {
+        }
     }
 
     @Override
@@ -80,8 +102,9 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
 
         String raw = message.getPayload();
 
+        // Frontend ping/pong
         if (raw.equals("ping")) {
-            session.sendMessage(new TextMessage("pong"));
+            state.outgoing.offer(new TextMessage("pong"));
             return;
         }
 
@@ -94,12 +117,12 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
 
             case "start" -> {
                 state.simRunning = true;
-                sendStatus(session, state);
+                queueStatus(state);
             }
 
             case "stop" -> {
                 state.simRunning = false;
-                sendStatus(session, state);
+                queueStatus(state);
             }
 
             case "speed" -> {
@@ -107,12 +130,12 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
                 if (ms instanceof Boolean b) {
                     state.maxSpeed = b;
                 }
-                sendStatus(session, state);
+                queueStatus(state);
             }
 
             case "save" -> {
                 Map<String, Object> full = state.world.toMap();
-                session.sendMessage(new TextMessage(mapper.writeValueAsString(Map.of(
+                state.outgoing.offer(new TextMessage(mapper.writeValueAsString(Map.of(
                         "type", "save",
                         "filename", "world_state_tick_" + state.world.getTick() + ".json",
                         "state", full
@@ -122,7 +145,7 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
             case "load" -> {
                 Map<String, Object> saved = (Map<String, Object>) data.get("state");
                 if (saved == null) {
-                    sendError(session, state, "invalid_state");
+                    queueError(state, "invalid_state");
                     return;
                 }
 
@@ -132,37 +155,42 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
                     state.lastState = RenderStateBuilder.buildState(newWorld);
                     state.simRunning = true;
 
-                    session.sendMessage(new TextMessage(mapper.writeValueAsString(Map.of(
+                    // Send STATUS + FIRST FRAME
+                    state.outgoing.offer(new TextMessage(mapper.writeValueAsString(Map.of(
                             "type", "status",
                             "running", true,
                             "max_speed", state.maxSpeed,
                             "loaded_tick", newWorld.getTick()
                     ))));
 
-                    session.sendMessage(new TextMessage(mapper.writeValueAsString(state.lastState)));
+                    state.outgoing.offer(new TextMessage(mapper.writeValueAsString(state.lastState)));
 
                 } catch (Exception e) {
-                    sendError(session, state, "load_failed");
+                    queueError(state, "load_failed");
                 }
             }
         }
     }
 
-    private void sendStatus(WebSocketSession session, ClientState state) throws Exception {
-        session.sendMessage(new TextMessage(mapper.writeValueAsString(Map.of(
-                "type", "status",
-                "running", state.simRunning,
-                "max_speed", state.maxSpeed
-        ))));
+    private void queueStatus(ClientState state) {
+        try {
+            state.outgoing.offer(new TextMessage(mapper.writeValueAsString(Map.of(
+                    "type", "status",
+                    "running", state.simRunning,
+                    "max_speed", state.maxSpeed
+            ))));
+        } catch (Exception ignore) {}
     }
 
-    private void sendError(WebSocketSession session, ClientState state, String err) throws Exception {
-        session.sendMessage(new TextMessage(mapper.writeValueAsString(Map.of(
-                "type", "status",
-                "running", state.simRunning,
-                "max_speed", state.maxSpeed,
-                "error", err
-        ))));
+    private void queueError(ClientState state, String err) {
+        try {
+            state.outgoing.offer(new TextMessage(mapper.writeValueAsString(Map.of(
+                    "type", "status",
+                    "running", state.simRunning,
+                    "max_speed", state.maxSpeed,
+                    "error", err
+            ))));
+        } catch (Exception ignore) {}
     }
 
     @Override
@@ -176,6 +204,9 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
         boolean simRunning = true;
         boolean maxSpeed = false;
         Map<String, Object> lastState;
+
+        // Safe queue of outgoing messages
+        final BlockingQueue<TextMessage> outgoing = new LinkedBlockingQueue<>();
 
         ClientState(World world) {
             this.world = world;
