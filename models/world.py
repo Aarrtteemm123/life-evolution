@@ -21,11 +21,43 @@ class World:
         self.env.spawn_random_organic()
         self.env.update_sub_grid()
         self.env.update_env_stats()
+        if not self.env.cells:
+            print("Restore last save...")
+            self.restore_last_save()
         if AUTO_SAVE and self.tick % TICK_SAVE_PERIOD == 0:
             os.makedirs(SAVES_DIR, exist_ok=True)
             save_path = os.path.join(SAVES_DIR, f"simulation_state_{self.tick}.json")
             self.save(save_path)
         self.tick_time_ms = (time.perf_counter() - start_time) * 1000
+
+    def restore_last_save(self):
+        if not os.path.isdir(SAVES_DIR):
+            return
+
+        # находим все файлы сохранений
+        save_files = [
+            os.path.join(SAVES_DIR, f)
+            for f in os.listdir(SAVES_DIR)
+            if f.startswith("simulation_state_") and f.endswith(".json")
+        ]
+
+        if not save_files:
+            return
+
+        # выбираем файл с максимальным тиком (последний)
+        def extract_tick(path):
+            name = os.path.basename(path)
+            return int(name.replace("simulation_state_", "").replace(".json", ""))
+
+        last_file = max(save_files, key=extract_tick)
+
+        # загружаем мир из него
+        restored = World.load(last_file)
+
+        # переносим данные
+        self.env = restored.env
+        self.tick = restored.tick
+        self.tick_time_ms = restored.tick_time_ms
 
     def to_dict(self):
         """Сериализация мира"""
