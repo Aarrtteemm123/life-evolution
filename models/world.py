@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import uuid
 
 from config import AUTO_SAVE, TICK_SAVE_PERIOD, SAVES_DIR
 from models.environment import Environment
@@ -12,6 +13,7 @@ class World:
         self.env = Environment(width, height)
         self.tick: int = tick
         self.tick_time_ms = tick_time_ms
+        self.uuid = str(uuid.uuid4())
 
     def update(self):
         start_time = time.perf_counter()
@@ -21,16 +23,50 @@ class World:
         self.env.spawn_random_organic()
         self.env.update_sub_grid()
         self.env.update_env_stats()
+        if not self.env.cells:
+            self.restore_last_save()
+            return
         if AUTO_SAVE and self.tick % TICK_SAVE_PERIOD == 0:
             os.makedirs(SAVES_DIR, exist_ok=True)
-            save_path = os.path.join(SAVES_DIR, f"simulation_state_{self.tick}.json")
+            save_path = os.path.join(SAVES_DIR, f"simulation_state_{self.uuid}_{self.tick}.json")
             self.save(save_path)
         self.tick_time_ms = (time.perf_counter() - start_time) * 1000
+
+    def restore_last_save(self):
+        if not os.path.isdir(SAVES_DIR):
+            return
+
+        # находим все файлы сохранений
+        save_files = [
+            os.path.join(SAVES_DIR, f)
+            for f in os.listdir(SAVES_DIR)
+            if f.startswith(f"simulation_state_{self.uuid}") and f.endswith(".json")
+        ]
+
+        if not save_files:
+            return
+
+        # выбираем файл с максимальным тиком (последний)
+        def extract_tick(path):
+            name = os.path.basename(path)
+            return int(name.replace(f"simulation_state_{self.uuid}_", "").replace(".json", ""))
+
+        last_file = max(save_files, key=extract_tick)
+        print(f"Restoring last save: {last_file}")
+
+        # загружаем мир из него
+        restored_world = World.load(last_file)
+
+        self.env = restored_world.env
+        self.tick = restored_world.tick
+        self.tick_time_ms = restored_world.tick_time_ms
+        self.uuid = restored_world.uuid
 
     def to_dict(self):
         """Сериализация мира"""
         from config import SUBSTANCES
         return {
+            "uuid": self.uuid,
             "tick": self.tick,
             "tick_time_ms": self.tick_time_ms,
             "environment": self.env.to_dict(),
@@ -57,6 +93,7 @@ class World:
             data.get("tick", 0),
             data.get("tick_time_ms", 0)
         )
+        world.uuid = data.get("uuid")
         world.env = Environment.from_dict(env_data)
 
         return world
