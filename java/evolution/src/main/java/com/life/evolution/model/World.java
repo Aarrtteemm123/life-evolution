@@ -119,7 +119,7 @@ public class World {
     // SERIALIZE
     // ------------------------------------------------------------
     public Map<String, Object> toMap() {
-        Map<String, Object> m = new HashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>();
         m.put("uuid", uuid);
         m.put("tick", tick);
         m.put("tick_time_ms", tickTimeMs);
