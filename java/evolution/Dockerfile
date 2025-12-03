@@ -9,6 +9,12 @@ RUN mvn -q -e -DskipTests package
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
+# --- create directory for saves (important for volume mounting) ---
+RUN mkdir -p /app/saves
+
+# --- optionally declare volume ---
+VOLUME ["/app/saves"]
+
 COPY --from=builder /app/target/*.jar app.jar
 
 EXPOSE 8080
