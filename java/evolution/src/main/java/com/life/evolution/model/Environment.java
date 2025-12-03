@@ -150,7 +150,7 @@ public class Environment {
     // SERIALIZATION
     // -----------------------------------------------------------
     public Map<String, Object> toMap() {
-        Map<String, Object> m = new HashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>();
 
         List<Map<String,Object>> cellsList = new ArrayList<>();
         for (Cell c : cells) cellsList.add(c.toMap());

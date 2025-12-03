@@ -6,6 +6,7 @@ import com.life.evolution.config.Config;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class World {
@@ -64,7 +65,7 @@ public class World {
     // SERIALIZE TO MAP
     // ------------------------------------------------------------
     public Map<String, Object> toMap() {
-        Map<String, Object> m = new HashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>();
         m.put("tick", tick);
         m.put("tick_time_ms", tickTimeMs);
         m.put("environment", env.toMap());

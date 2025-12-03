@@ -159,7 +159,7 @@ public class EnvStats {
     // SERIALIZATION
     // ------------------------------------------------------------
     public Map<String, Object> toMap() {
-        Map<String, Object> m = new HashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>();
 
         m.put("cells_total", cellsTotal);
         m.put("cells_limit", cellsLimit);

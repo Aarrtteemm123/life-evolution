@@ -178,7 +178,7 @@ public class SubstanceGrid {
     // SERIALIZATION
     // ------------------------------------------------------------
     public Map<String, Object> toMap() {
-        Map<String, Object> m = new HashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>();
         List<Map<String, Object>> all = new ArrayList<>();
 
         for (var entry : grid.entrySet()) {
