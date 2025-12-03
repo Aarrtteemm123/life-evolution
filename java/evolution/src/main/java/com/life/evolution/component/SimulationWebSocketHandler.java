@@ -83,15 +83,15 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
                 }
             }
 
-            // Match Python timing
-            long elapsed = System.nanoTime() - start;
-            long target = (long) (Config.FRAME_TIME * 1_000_000_000L);
-            long remaining = target - elapsed;
+            if (!state.maxSpeed) {
+                long elapsed = System.nanoTime() - start;
+                long target = (long) (Config.FRAME_TIME * 1_000_000_000L);
+                long remaining = target - elapsed;
 
-            if (remaining > 0) {
-                Thread.sleep(remaining / 1_000_000, (int) (remaining % 1_000_000));
+                if (remaining > 0) {
+                    Thread.sleep(remaining / 1_000_000, (int) (remaining % 1_000_000));
+                }
             }
-
         } catch (Exception ignored) {}
     }
 
