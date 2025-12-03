@@ -233,6 +233,8 @@ public class Cell {
 
         Cell c = cloneCell();
 
+        c.age = 0;
+
         double half = energy / 2;
         energy = half;
         c.energy = half;
