@@ -31,8 +31,8 @@ Complex behavior arises from simple local rules.
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/your-user/evolution-simulator.git
-cd evolution-simulator
+git clone https://github.com/Aarrtteemm123/life-evolution.git
+cd life-evolution
 ```
 
 ### 2. Install dependencies (Requires Python 3.10+)
