@@ -18,6 +18,7 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
 
     // one simulation loop per client
     private final ConcurrentHashMap<WebSocketSession, ClientState> clients = new ConcurrentHashMap<>();
+    // We still use ScheduledExecutorService, but only for submit(), not fixed rate
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(8);
 
     @Override
@@ -41,13 +42,25 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
                 ))
         ));
 
-        // schedule simulation loop
-        executor.scheduleAtFixedRate(
-                () -> tickLoop(session, state),
-                0,
-                (long) (Config.FRAME_TIME * 1_000_000_000L),   // FRAME_TIME seconds → nanoseconds
-                TimeUnit.NANOSECONDS
-        );
+        // ❗ Start a per-client loop that calls tickLoop() repeatedly.
+        // No scheduleAtFixedRate → maxSpeed can truly run CPU-limited.
+        executor.submit(() -> {
+            try {
+                while (session.isOpen()) {
+                    tickLoop(session, state);
+                }
+            } catch (Exception e) {
+                // Optionally log error
+                // e.printStackTrace();
+            } finally {
+                clients.remove(session);
+                try {
+                    if (session.isOpen()) {
+                        session.close();
+                    }
+                } catch (Exception ignored) {}
+            }
+        });
     }
 
     private void tickLoop(WebSocketSession session, ClientState state) {
@@ -56,16 +69,15 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
         try {
             long start = System.nanoTime();
 
-            // MAX SPEED MODE (update only, no rendering)
-            if (state.simRunning && state.maxSpeed) {
+            // ---- SIMULATION STEP(S) ----
+            if (state.simRunning) {
+                // exactly 1 tick per loop
                 state.world.update();
-            } else {
+            }
 
-                // Normal mode
-                if (state.simRunning) {
-                    state.world.update();
-                }
-
+            // ---- RENDER / SEND ----
+            if (!state.maxSpeed) {
+                // Normal mode: build full render state every frame
                 Map<String, Object> renderState = RenderStateBuilder.buildState(state.world);
                 state.lastState = renderState;
 
@@ -74,24 +86,36 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
                         mapper.writeValueAsString(renderState)
                 ));
             }
+            // In maxSpeed: we do NOT render every loop to avoid slowing it down.
+            // Status/save/load messages still go through outgoing queue.
 
             // SEND QUEUED MESSAGES (ONLY THIS THREAD!)
             TextMessage msg;
             while ((msg = state.outgoing.poll()) != null) {
-                if (session.isOpen()) {
-                    session.sendMessage(msg);
-                }
+                if (!session.isOpen()) break;
+                session.sendMessage(msg);
             }
 
+            // ---- TIMING CONTROL ----
+            // Normal mode → limit to FRAME_TIME
+            // Max speed   → NO SLEEP (CPU max)
             if (!state.maxSpeed) {
                 long elapsed = System.nanoTime() - start;
                 long target = (long) (Config.FRAME_TIME * 1_000_000_000L);
                 long remaining = target - elapsed;
 
                 if (remaining > 0) {
-                    Thread.sleep(remaining / 1_000_000, (int) (remaining % 1_000_000));
+                    long ms = remaining / 1_000_000L;
+                    int ns = (int) (remaining % 1_000_000L);
+                    if (ms > 0 || ns > 0) {
+                        Thread.sleep(ms, ns);
+                    }
                 }
             }
+            // if maxSpeed == true → loop returns immediately, outer while() calls tickLoop again
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Exception ignored) {}
     }
 
