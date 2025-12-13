@@ -4,6 +4,8 @@ services:
   evolution:
     build: .
     container_name: evolution
+    volumes:
+      - ./saves:/app/saves
     ports:
       - "8080:8080"
     restart: unless-stopped
